@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OneOcean Demo - Path Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Courier New", monospace;
+      background: #08131f;
+      color: #d9f2ff;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #ui-panel {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 360px;
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      background: rgba(6, 16, 28, 0.9);
+      border-left: 4px solid #f3a44f;
+      border-radius: 3px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      z-index: 10;
+    }
+
+    #ui-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #ui-panel::-webkit-scrollbar-thumb {
+      background: #6f5e45;
+      border-radius: 3px;
+    }
+
+    .header {
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .sub {
+      font-size: 10px;
+      color: #c7a680;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .section-title {
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-size: 10px;
+      color: #efc48c;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .ui-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+      font-size: 11px;
+    }
+
+    .value {
+      color: #ffd59f;
+      font-family: monospace;
+      text-align: right;
+    }
+
+    .divider {
+      border-bottom: 1px dashed #6a4e2a;
+      margin: 10px 0;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 110px;
+      border: none;
+      border-radius: 4px;
+      padding: 7px 8px;
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #fff5e8;
+      background: #70502b;
+    }
+
+    .btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn.active {
+      background: #c97a22;
+    }
+
+    #btn-import-env { background: #2b6f70; }
+    #btn-import-path { background: #2b4f70; }
+    #btn-export-path { background: #8a6821; }
+    #btn-snapshot { background: #3a2f50; }
+    #btn-back { background: #5f3d3d; }
+
+    #experiment-select {
+      width: 100%;
+      padding: 7px;
+      border-radius: 4px;
+      border: 1px solid #7b5e37;
+      background: #251b11;
+      color: #ffd39f;
+      font-size: 11px;
+    }
+
+    #legend-box {
+      margin-top: 8px;
+      border: 1px solid #6f532f;
+      border-radius: 4px;
+      padding: 8px;
+      background: rgba(38, 24, 10, 0.65);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 10px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 4px;
+      margin-right: 8px;
+      border-radius: 2px;
+    }
+
+    #labels-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9;
+    }
+
+    .floating-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: rgba(82, 48, 12, 0.92);
+      border: 1px solid #efb169;
+      border-radius: 4px;
+      color: #fff1dd;
+      padding: 3px 6px;
+      font-size: 10px;
+      white-space: nowrap;
+      display: none;
+    }
+
+    #file-input-env,
+    #file-input-path {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="labels-container"></div>
+
+  <div id="ui-panel">
+    <div class="header">OneOcean Path Demo (E2)</div>
+    <div class="sub">Path and task visualization page. Supports static inspection and fly-through replay using imported or default JSON.</div>
+
+    <div class="section-title">Experiment</div>
+    <select id="experiment-select"></select>
+    <div class="btn-group">
+      <button id="btn-mode-static" class="btn active">STATIC</button>
+      <button id="btn-mode-fly" class="btn">FLY REPLAY</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Status</div>
+    <div class="ui-row"><span>Data Source</span><span id="data-source" class="value">mock-default</span></div>
+    <div class="ui-row"><span>Map Seed</span><span id="seed-val" class="value">-</span></div>
+    <div class="ui-row"><span>Path Mode</span><span id="mode-val" class="value">STATIC</span></div>
+    <div class="ui-row"><span>Replay Progress</span><span id="progress-val" class="value">0%</span></div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Data Management</div>
+    <div class="btn-group">
+      <button id="btn-import-env" class="btn">IMPORT ENV</button>
+      <button id="btn-import-path" class="btn">IMPORT PATH</button>
+    </div>
+    <button id="btn-export-path" class="btn" style="width:100%; margin-top:6px;">EXPORT PATH JSON</button>
+    <button id="btn-snapshot" class="btn" style="width:100%; margin-top:6px;">SNAPSHOT (PNG)</button>
+    <button id="btn-back" class="btn" style="width:100%; margin-top:6px;">BACK TO ENV PAGE</button>
+
+    <input id="file-input-env" type="file" accept=".json" />
+    <input id="file-input-path" type="file" accept=".json" />
+
+    <div class="divider"></div>
+
+    <div class="section-title">Legend</div>
+    <div id="legend-box"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="assets/js/ocean_demo_shared.js"></script>
+  <script>
+    const MAP_URL = "assets/data/ocean_map_data.json";
+    const PATH_URL = "assets/data/ocean_path_data.json";
+
+    let scene;
+    let camera;
+    let renderer;
+    let controls;
+    let clock;
+
+    let mapData = null;
+    let pathData = null;
+    let sourceLabel = "mock-default";
+
+    let seafloorMesh = null;
+    let obstacleGroup = null;
+    let userGroup = null;
+    let routeGroup = null;
+    let replayVehicle = null;
+
+    let mode = "STATIC";
+    let currentExperimentIndex = 0;
+    let replayDistance = 0;
+    let replayLength = 1;
+    const labelBindings = [];
+
+    const ui = {
+      source: document.getElementById("data-source"),
+      seed: document.getElementById("seed-val"),
+      mode: document.getElementById("mode-val"),
+      progress: document.getElementById("progress-val"),
+    };
+
+    async function boot() {
+      await loadMapData();
+      await loadPathData();
+      initScene();
+      rebuildStaticScene();
+      bindUi();
+      renderExperiment();
+      animate();
+    }
+
+    async function loadMapData(explicitData) {
+      if (explicitData) {
+        mapData = explicitData;
+        sourceLabel = "imported";
+        OceanDemoShared.cacheData("map", mapData);
+        return;
+      }
+
+      const cached = OceanDemoShared.readCachedData("map");
+      if (cached && cached.terrainMap) {
+        mapData = cached;
+        sourceLabel = "cache";
+        return;
+      }
+
+      mapData = await OceanDemoShared.fetchJson(MAP_URL);
+      sourceLabel = "mock-default";
+      OceanDemoShared.cacheData("map", mapData);
+    }
+
+    async function loadPathData(explicitData) {
+      if (explicitData) {
+        pathData = explicitData;
+        sourceLabel = "imported";
+        OceanDemoShared.cacheData("path", pathData);
+        return;
+      }
+
+      const cached = OceanDemoShared.readCachedData("path");
+      if (cached && cached.experiments) {
+        pathData = cached;
+        sourceLabel = sourceLabel === "mock-default" ? "cache" : sourceLabel;
+        return;
+      }
+
+      pathData = await OceanDemoShared.fetchJson(PATH_URL);
+      sourceLabel = sourceLabel === "mock-default" ? "mock-default" : sourceLabel;
+      OceanDemoShared.cacheData("path", pathData);
+    }
+
+    function initScene() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0d131e);
+      scene.fog = new THREE.FogExp2(0x0d131e, 0.0038);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+      camera.position.set(220, 140, 240);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+
+      clock = new THREE.Clock();
+
+      scene.add(new THREE.AmbientLight(0x7e9bbb, 0.55));
+      const key = new THREE.DirectionalLight(0xffd5aa, 0.95);
+      key.position.set(260, 220, 70);
+      scene.add(key);
+
+      const waterPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(900, 900),
+        new THREE.MeshPhongMaterial({ color: 0x355579, transparent: true, opacity: 0.3, side: THREE.DoubleSide })
+      );
+      waterPlane.rotation.x = -Math.PI / 2;
+      scene.add(waterPlane);
+
+      const grid = new THREE.GridHelper(900, 18, 0x665544, 0x4f3f2a);
+      grid.position.y = -70;
+      scene.add(grid);
+
+      replayVehicle = new THREE.Mesh(
+        new THREE.ConeGeometry(3.5, 9, 14),
+        new THREE.MeshStandardMaterial({ color: 0xffd386, metalness: 0.35, roughness: 0.45 })
+      );
+      replayVehicle.rotation.z = -Math.PI / 2;
+      scene.add(replayVehicle);
+
+      window.addEventListener("resize", onResize);
+    }
+
+    function rebuildStaticScene() {
+      ui.source.textContent = sourceLabel;
+      ui.seed.textContent = String(mapData.seed || "-");
+
+      if (seafloorMesh) scene.remove(seafloorMesh);
+      if (obstacleGroup) scene.remove(obstacleGroup);
+      if (userGroup) scene.remove(userGroup);
+      clearLabels();
+
+      const terrain = Array.isArray(mapData.terrainMap) ? mapData.terrainMap : [];
+      const plane = new THREE.PlaneGeometry(420, 420, 40, 40);
+      plane.rotateX(-Math.PI / 2);
+      const pos = plane.attributes.position;
+      for (let i = 0; i < pos.count; i += 1) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const y = OceanDemoShared.nearestTerrainHeight(terrain, x, z, -50);
+        pos.setY(i, y);
+      }
+      plane.computeVertexNormals();
+      seafloorMesh = new THREE.Mesh(
+        plane,
+        new THREE.MeshStandardMaterial({ color: 0x384e61, roughness: 0.9, metalness: 0.1 })
+      );
+      scene.add(seafloorMesh);
+
+      obstacleGroup = new THREE.Group();
+      const obstacles = []
+        .concat(Array.isArray(mapData.cityBuildings) ? mapData.cityBuildings : [])
+        .concat(Array.isArray(mapData.mountainBuildings) ? mapData.mountainBuildings : []);
+      for (let i = 0; i < obstacles.length; i += 1) {
+        const o = obstacles[i];
+        const w = (o.halfWidth || 8) * 2;
+        const d = (o.halfDepth || 8) * 2;
+        const h = o.height || 20;
+        const baseY = typeof o.baseHeight === "number"
+          ? o.baseHeight
+          : OceanDemoShared.nearestTerrainHeight(terrain, o.x, o.z, -50);
+        const box = new THREE.Mesh(
+          new THREE.BoxGeometry(w, h, d),
+          new THREE.MeshStandardMaterial({ color: 0x6f7b85, roughness: 0.86 })
+        );
+        box.position.set(o.x, baseY + h / 2, o.z);
+        obstacleGroup.add(box);
+      }
+      scene.add(obstacleGroup);
+
+      userGroup = new THREE.Group();
+      const users = Array.isArray(mapData.finalUsers) ? mapData.finalUsers : [];
+      for (let i = 0; i < users.length; i += 1) {
+        const u = users[i];
+        const marker = new THREE.Mesh(
+          new THREE.SphereGeometry(2.4, 12, 10),
+          new THREE.MeshStandardMaterial({ color: 0x9be7ff, emissive: 0x5e3d19, emissiveIntensity: 0.35 })
+        );
+        marker.position.set(u.x, u.y + 2.6, u.z);
+        userGroup.add(marker);
+
+        const label = document.createElement("div");
+        label.className = "floating-label";
+        label.textContent = "U" + (i + 1);
+        document.getElementById("labels-container").appendChild(label);
+        labelBindings.push({ world: marker.position, el: label });
+      }
+      scene.add(userGroup);
+    }
+
+    function clearLabels() {
+      while (labelBindings.length > 0) {
+        const item = labelBindings.pop();
+        if (item.el && item.el.parentNode) item.el.parentNode.removeChild(item.el);
+      }
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function getCurrentExperiment() {
+      if (!pathData || !Array.isArray(pathData.experiments) || pathData.experiments.length === 0) {
+        return null;
+      }
+      return pathData.experiments[currentExperimentIndex] || pathData.experiments[0];
+    }
+
+    function renderExperiment() {
+      if (routeGroup) scene.remove(routeGroup);
+      routeGroup = new THREE.Group();
+
+      const exp = getCurrentExperiment();
+      if (!exp) {
+        scene.add(routeGroup);
+        return;
+      }
+
+      const legendBox = document.getElementById("legend-box");
+      legendBox.innerHTML = "";
+
+      const allPaths = Array.isArray(exp.paths) ? exp.paths : [];
+      for (let i = 0; i < allPaths.length; i += 1) {
+        const route = allPaths[i];
+        const pts = Array.isArray(route.points) ? route.points : [];
+        if (pts.length < 2) continue;
+
+        const vectors = pts.map(p => new THREE.Vector3(p.x, p.y, p.z));
+        const geometry = new THREE.BufferGeometry().setFromPoints(vectors);
+        const color = route.color || "#38bdf8";
+        const material = new THREE.LineBasicMaterial({ color: new THREE.Color(color), linewidth: 2 });
+        routeGroup.add(new THREE.Line(geometry, material));
+
+        const legendItem = document.createElement("div");
+        legendItem.className = "legend-item";
+        const swatch = document.createElement("div");
+        swatch.className = "legend-color";
+        swatch.style.background = color;
+        const text = document.createElement("span");
+        text.textContent = route.label || ("Path " + (i + 1));
+        legendItem.appendChild(swatch);
+        legendItem.appendChild(text);
+        legendBox.appendChild(legendItem);
+      }
+
+      scene.add(routeGroup);
+      resetReplay();
+    }
+
+    function getReplayPath() {
+      const exp = getCurrentExperiment();
+      if (!exp || !Array.isArray(exp.paths) || exp.paths.length === 0) {
+        return [];
+      }
+      const first = exp.paths[0];
+      return Array.isArray(first.points) ? first.points : [];
+    }
+
+    function computePathLength(points) {
+      let length = 0;
+      for (let i = 1; i < points.length; i += 1) {
+        const a = points[i - 1];
+        const b = points[i];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dz = b.z - a.z;
+        length += Math.sqrt(dx * dx + dy * dy + dz * dz);
+      }
+      return Math.max(length, 1);
+    }
+
+    function sampleAlongPath(points, distance) {
+      if (points.length === 0) return null;
+      if (points.length === 1) return { pos: points[0], dir: { x: 1, y: 0, z: 0 } };
+
+      let remaining = distance;
+      for (let i = 1; i < points.length; i += 1) {
+        const a = points[i - 1];
+        const b = points[i];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dz = b.z - a.z;
+        const segLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (remaining <= segLen) {
+          const t = segLen <= 1e-6 ? 0 : remaining / segLen;
+          return {
+            pos: { x: a.x + dx * t, y: a.y + dy * t, z: a.z + dz * t },
+            dir: { x: dx / Math.max(segLen, 1e-6), y: dy / Math.max(segLen, 1e-6), z: dz / Math.max(segLen, 1e-6) }
+          };
+        }
+        remaining -= segLen;
+      }
+
+      const pA = points[points.length - 2];
+      const pB = points[points.length - 1];
+      const dx = pB.x - pA.x;
+      const dy = pB.y - pA.y;
+      const dz = pB.z - pA.z;
+      const segLen = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      return {
+        pos: { x: pB.x, y: pB.y, z: pB.z },
+        dir: { x: dx / Math.max(segLen, 1e-6), y: dy / Math.max(segLen, 1e-6), z: dz / Math.max(segLen, 1e-6) }
+      };
+    }
+
+    function resetReplay() {
+      const points = getReplayPath();
+      replayDistance = 0;
+      replayLength = computePathLength(points);
+      if (points.length > 0) {
+        replayVehicle.position.set(points[0].x, points[0].y, points[0].z);
+      }
+      ui.progress.textContent = "0%";
+    }
+
+    function updateReplay(dt) {
+      if (mode !== "FLY") return;
+
+      const points = getReplayPath();
+      if (points.length < 2) return;
+
+      replayDistance += dt * 36;
+      if (replayDistance > replayLength) replayDistance = 0;
+
+      const sampled = sampleAlongPath(points, replayDistance);
+      if (!sampled) return;
+
+      replayVehicle.position.set(sampled.pos.x, sampled.pos.y, sampled.pos.z);
+      replayVehicle.rotation.y = Math.atan2(sampled.dir.z, sampled.dir.x);
+
+      const progress = (replayDistance / replayLength) * 100;
+      ui.progress.textContent = progress.toFixed(1) + "%";
+
+      const desiredCam = replayVehicle.position.clone().add(new THREE.Vector3(-45, 20, 0).applyEuler(new THREE.Euler(0, replayVehicle.rotation.y, 0)));
+      camera.position.lerp(desiredCam, 0.05);
+      controls.target.lerp(replayVehicle.position, 0.08);
+    }
+
+    function updateLabels() {
+      for (let i = 0; i < labelBindings.length; i += 1) {
+        const item = labelBindings[i];
+        const p = item.world.clone().project(camera);
+        const sx = (p.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (p.y * -0.5 + 0.5) * window.innerHeight;
+        const visible = p.z < 1 && sx > 0 && sx < window.innerWidth && sy > 0 && sy < window.innerHeight;
+        item.el.style.display = visible ? "block" : "none";
+        if (visible) {
+          item.el.style.left = sx + "px";
+          item.el.style.top = sy + "px";
+        }
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      updateReplay(dt);
+      controls.update();
+      updateLabels();
+      renderer.render(scene, camera);
+    }
+
+    function refreshExperimentOptions() {
+      const select = document.getElementById("experiment-select");
+      select.innerHTML = "";
+      const experiments = Array.isArray(pathData.experiments) ? pathData.experiments : [];
+      for (let i = 0; i < experiments.length; i += 1) {
+        const option = document.createElement("option");
+        option.value = String(i);
+        option.textContent = experiments[i].name || ("Experiment " + (i + 1));
+        select.appendChild(option);
+      }
+      if (experiments.length > 0) {
+        select.value = String(currentExperimentIndex);
+      }
+    }
+
+    function bindUi() {
+      const select = document.getElementById("experiment-select");
+      const btnStatic = document.getElementById("btn-mode-static");
+      const btnFly = document.getElementById("btn-mode-fly");
+      const btnImportEnv = document.getElementById("btn-import-env");
+      const btnImportPath = document.getElementById("btn-import-path");
+      const btnExportPath = document.getElementById("btn-export-path");
+      const btnSnapshot = document.getElementById("btn-snapshot");
+      const btnBack = document.getElementById("btn-back");
+      const inputEnv = document.getElementById("file-input-env");
+      const inputPath = document.getElementById("file-input-path");
+
+      select.onchange = function () {
+        currentExperimentIndex = Number(select.value || 0);
+        renderExperiment();
+      };
+
+      btnStatic.onclick = function () {
+        mode = "STATIC";
+        ui.mode.textContent = mode;
+        btnStatic.classList.add("active");
+        btnFly.classList.remove("active");
+        ui.progress.textContent = "-";
+      };
+
+      btnFly.onclick = function () {
+        mode = "FLY";
+        ui.mode.textContent = mode;
+        btnFly.classList.add("active");
+        btnStatic.classList.remove("active");
+        resetReplay();
+      };
+
+      btnImportEnv.onclick = function () {
+        inputEnv.click();
+      };
+
+      btnImportPath.onclick = function () {
+        inputPath.click();
+      };
+
+      OceanDemoShared.bindJsonImport(inputEnv, async function (parsed) {
+        if (!parsed || !Array.isArray(parsed.terrainMap)) {
+          alert("Environment JSON missing required field: terrainMap");
+          return;
+        }
+        await loadMapData(parsed);
+        rebuildStaticScene();
+        renderExperiment();
+      });
+
+      OceanDemoShared.bindJsonImport(inputPath, async function (parsed) {
+        if (!parsed || !Array.isArray(parsed.experiments)) {
+          alert("Path JSON missing required field: experiments");
+          return;
+        }
+        await loadPathData(parsed);
+        refreshExperimentOptions();
+        renderExperiment();
+      });
+
+      btnExportPath.onclick = function () {
+        OceanDemoShared.downloadJson("ocean_path_data.json", pathData);
+      };
+
+      btnSnapshot.onclick = function () {
+        html2canvas(document.body).then(function (canvas) {
+          const a = document.createElement("a");
+          a.href = canvas.toDataURL("image/png");
+          a.download = "oneocean_path_snapshot.png";
+          a.click();
+        });
+      };
+
+      btnBack.onclick = function () {
+        window.location.href = "index.html";
+      };
+
+      refreshExperimentOptions();
+      ui.mode.textContent = mode;
+    }
+
+    boot().catch(function (error) {
+      console.error(error);
+      alert("Failed to start path demo: " + error.message);
+    });
+  </script>
+</body>
+</html>

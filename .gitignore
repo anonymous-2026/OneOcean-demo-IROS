@@ -1,0 +1,7 @@
+*.bak.json
+*.pyc
+*_sync_manifest.json
+.DS_Store
+__pycache__/
+dist/
+node_modules/

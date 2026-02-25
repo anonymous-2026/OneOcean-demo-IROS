@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OneOcean Demo - Environment</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Courier New", monospace;
+      background: #08131f;
+      color: #d9f2ff;
+    }
+
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #ui-panel {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 340px;
+      max-height: calc(100vh - 36px);
+      overflow-y: auto;
+      background: rgba(6, 16, 28, 0.9);
+      border-left: 4px solid #3bb3ff;
+      border-radius: 3px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      z-index: 10;
+    }
+
+    #ui-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #ui-panel::-webkit-scrollbar-thumb {
+      background: #2f5870;
+      border-radius: 3px;
+    }
+
+    .header {
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+
+    .sub {
+      font-size: 10px;
+      color: #8eb0c5;
+      margin-bottom: 10px;
+      line-height: 1.35;
+    }
+
+    .section-title {
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-size: 10px;
+      color: #87b9d7;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .ui-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+      font-size: 11px;
+    }
+
+    .value {
+      color: #6ee1ff;
+      font-family: monospace;
+      text-align: right;
+    }
+
+    .divider {
+      border-bottom: 1px dashed #2c4e63;
+      margin: 10px 0;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      flex: 1;
+      min-width: 110px;
+      border: none;
+      border-radius: 4px;
+      padding: 7px 8px;
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      color: #e9f9ff;
+      background: #25465b;
+    }
+
+    .btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn.active {
+      background: #3a89b4;
+    }
+
+    #btn-export-env {
+      background: #0d7a77;
+    }
+
+    #btn-import-env {
+      background: #1c6496;
+    }
+
+    #btn-reset {
+      background: #8a3c3c;
+    }
+
+    #btn-snapshot {
+      background: #232f42;
+    }
+
+    #btn-go-path {
+      background: #7b5d10;
+    }
+
+    #instructions {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      background: rgba(5, 14, 24, 0.75);
+      border: 1px solid rgba(120, 172, 200, 0.5);
+      border-radius: 18px;
+      padding: 10px 16px;
+      z-index: 8;
+      pointer-events: none;
+      text-align: center;
+      color: #d4edfa;
+    }
+
+    #labels-container {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 9;
+    }
+
+    .floating-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: rgba(31, 74, 96, 0.92);
+      border: 1px solid #72caef;
+      border-radius: 4px;
+      color: #e0f6ff;
+      padding: 3px 6px;
+      font-size: 10px;
+      white-space: nowrap;
+      display: none;
+    }
+
+    #file-input-env {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="labels-container"></div>
+
+  <div id="ui-panel">
+    <div class="header">OneOcean Online Demo (E2)</div>
+    <div class="sub">Environment view (mock-first). Semantics are oceanized and schema-compatible with `demo_ref` style JSON.</div>
+
+    <div class="section-title">Modes</div>
+    <div class="btn-group">
+      <button id="btn-camera-orbit" class="btn active">ORBIT CAMERA</button>
+      <button id="btn-camera-follow" class="btn">FOLLOW UUV</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Status</div>
+    <div class="ui-row"><span>Data Source</span><span id="data-source" class="value">mock-default</span></div>
+    <div class="ui-row"><span>Map Seed</span><span id="seed-val" class="value">-</span></div>
+    <div class="ui-row"><span>Position</span><span id="pos-val" class="value">-</span></div>
+    <div class="ui-row"><span>Speed</span><span id="speed-val" class="value">-</span></div>
+    <div class="ui-row"><span>Depth</span><span id="depth-val" class="value">-</span></div>
+    <div class="ui-row"><span>Current</span><span id="current-val" class="value">-</span></div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Data Management</div>
+    <div class="btn-group">
+      <button id="btn-export-env" class="btn">EXPORT MAP JSON</button>
+      <button id="btn-import-env" class="btn">IMPORT MAP JSON</button>
+    </div>
+    <button id="btn-reset" class="btn" style="width:100%; margin-top:6px;">RESET TO DEFAULT MAP</button>
+    <button id="btn-snapshot" class="btn" style="width:100%; margin-top:6px;">SNAPSHOT (PNG)</button>
+    <button id="btn-go-path" class="btn" style="width:100%; margin-top:6px;">OPEN PATH PAGE</button>
+
+    <input id="file-input-env" type="file" accept=".json" />
+
+    <div class="divider"></div>
+
+    <div class="section-title">Dataset Hook</div>
+    <div class="sub" style="margin-bottom:0;">
+      Current mode reads local JSON. Hook functions already isolate loading (`loadMapData`) so Lane D/A exports can be connected later without UI rewrite.
+    </div>
+  </div>
+
+  <div id="instructions">
+    Controls: W/S forward-back, A/D yaw, R/F up-down | Shift for boost
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="assets/js/ocean_demo_shared.js"></script>
+  <script>
+    const MAP_URL = "assets/data/ocean_map_data.json";
+
+    let scene;
+    let camera;
+    let renderer;
+    let controls;
+    let clock;
+
+    let mapData = null;
+    let mapSource = "mock-default";
+
+    let seafloorMesh = null;
+    let seafloorPoints = null;
+    let obstacleGroup = null;
+    let userGroup = null;
+    let submarine = null;
+    let currentParticles = null;
+    const userLabelObjects = [];
+
+    let followMode = false;
+    const keyState = { KeyW: false, KeyS: false, KeyA: false, KeyD: false, KeyR: false, KeyF: false, ShiftLeft: false, ShiftRight: false };
+
+    const ui = {
+      source: document.getElementById("data-source"),
+      seed: document.getElementById("seed-val"),
+      pos: document.getElementById("pos-val"),
+      speed: document.getElementById("speed-val"),
+      depth: document.getElementById("depth-val"),
+      current: document.getElementById("current-val"),
+    };
+
+    async function boot() {
+      await loadMapData();
+      initScene();
+      rebuildEnvironment();
+      bindUi();
+      animate();
+    }
+
+    async function loadMapData(explicitData) {
+      if (explicitData) {
+        mapData = explicitData;
+        mapSource = "imported";
+        OceanDemoShared.cacheData("map", mapData);
+        return;
+      }
+
+      const cached = OceanDemoShared.readCachedData("map");
+      if (cached && cached.terrainMap) {
+        mapData = cached;
+        mapSource = "cache";
+        return;
+      }
+
+      mapData = await OceanDemoShared.fetchJson(MAP_URL);
+      mapSource = "mock-default";
+      OceanDemoShared.cacheData("map", mapData);
+    }
+
+    function initScene() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x071625);
+      scene.fog = new THREE.FogExp2(0x071625, 0.0035);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 5000);
+      camera.position.set(200, 110, 240);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      document.getElementById("canvas-container").appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.target.set(0, -35, 0);
+
+      clock = new THREE.Clock();
+
+      const ambient = new THREE.AmbientLight(0x6ca8c5, 0.55);
+      scene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xbde6ff, 0.95);
+      keyLight.position.set(220, 260, 130);
+      scene.add(keyLight);
+
+      const fill = new THREE.PointLight(0x2cc7ff, 0.7, 420);
+      fill.position.set(0, 20, 0);
+      scene.add(fill);
+
+      const waterPlane = new THREE.Mesh(
+        new THREE.PlaneGeometry(900, 900),
+        new THREE.MeshPhongMaterial({ color: 0x1f5f84, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+      );
+      waterPlane.rotation.x = -Math.PI / 2;
+      waterPlane.position.y = 0;
+      scene.add(waterPlane);
+
+      const grid = new THREE.GridHelper(900, 18, 0x2a5b76, 0x1d3f55);
+      grid.position.y = -70;
+      scene.add(grid);
+
+      submarine = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(4, 4, 24, 16, 1, false),
+        new THREE.MeshStandardMaterial({ color: 0x95b2c2, metalness: 0.5, roughness: 0.45 })
+      );
+      body.rotation.z = Math.PI / 2;
+      submarine.add(body);
+
+      const nose = new THREE.Mesh(
+        new THREE.ConeGeometry(4, 8, 14),
+        new THREE.MeshStandardMaterial({ color: 0x7f9cac, metalness: 0.45, roughness: 0.4 })
+      );
+      nose.rotation.z = -Math.PI / 2;
+      nose.position.x = 16;
+      submarine.add(nose);
+
+      const fin = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 5.5, 8),
+        new THREE.MeshStandardMaterial({ color: 0x5f7f94, metalness: 0.3, roughness: 0.55 })
+      );
+      fin.position.set(-2, 4.2, 0);
+      submarine.add(fin);
+
+      submarine.position.set(-165, -42, -150);
+      scene.add(submarine);
+
+      window.addEventListener("resize", onResize);
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+    }
+
+    function rebuildEnvironment() {
+      ui.seed.textContent = String(mapData.seed || "-");
+      ui.source.textContent = mapSource;
+
+      if (seafloorMesh) scene.remove(seafloorMesh);
+      if (seafloorPoints) scene.remove(seafloorPoints);
+      if (obstacleGroup) scene.remove(obstacleGroup);
+      if (userGroup) scene.remove(userGroup);
+      if (currentParticles) scene.remove(currentParticles);
+      clearUserLabels();
+
+      const terrain = Array.isArray(mapData.terrainMap) ? mapData.terrainMap : [];
+
+      const plane = new THREE.PlaneGeometry(420, 420, 40, 40);
+      plane.rotateX(-Math.PI / 2);
+      const pos = plane.attributes.position;
+      for (let i = 0; i < pos.count; i += 1) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        const y = OceanDemoShared.nearestTerrainHeight(terrain, x, z, -48);
+        pos.setY(i, y);
+      }
+      plane.computeVertexNormals();
+      seafloorMesh = new THREE.Mesh(
+        plane,
+        new THREE.MeshStandardMaterial({ color: 0x2b5a76, metalness: 0.1, roughness: 0.92, wireframe: false })
+      );
+      scene.add(seafloorMesh);
+
+      const pointGeo = new THREE.BufferGeometry();
+      const points = [];
+      for (let i = 0; i < terrain.length; i += 1) {
+        points.push(terrain[i].x, terrain[i].y + 0.7, terrain[i].z);
+      }
+      pointGeo.setAttribute("position", new THREE.Float32BufferAttribute(points, 3));
+      seafloorPoints = new THREE.Points(
+        pointGeo,
+        new THREE.PointsMaterial({ color: 0x70d6ff, size: 2.1, transparent: true, opacity: 0.8 })
+      );
+      scene.add(seafloorPoints);
+
+      obstacleGroup = new THREE.Group();
+      const obstacles = []
+        .concat(Array.isArray(mapData.cityBuildings) ? mapData.cityBuildings : [])
+        .concat(Array.isArray(mapData.mountainBuildings) ? mapData.mountainBuildings : []);
+
+      for (let i = 0; i < obstacles.length; i += 1) {
+        const obstacle = obstacles[i];
+        const width = (obstacle.halfWidth || 8) * 2;
+        const depth = (obstacle.halfDepth || 8) * 2;
+        const height = obstacle.height || 20;
+        const baseY = typeof obstacle.baseHeight === "number"
+          ? obstacle.baseHeight
+          : OceanDemoShared.nearestTerrainHeight(terrain, obstacle.x, obstacle.z, -52);
+
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, depth),
+          new THREE.MeshStandardMaterial({ color: 0x647d8b, metalness: 0.15, roughness: 0.85 })
+        );
+        mesh.position.set(obstacle.x, baseY + height / 2, obstacle.z);
+        obstacleGroup.add(mesh);
+      }
+      scene.add(obstacleGroup);
+
+      userGroup = new THREE.Group();
+      const users = Array.isArray(mapData.finalUsers) ? mapData.finalUsers : [];
+      for (let i = 0; i < users.length; i += 1) {
+        const u = users[i];
+        const marker = new THREE.Mesh(
+          new THREE.SphereGeometry(2.8, 12, 10),
+          new THREE.MeshStandardMaterial({ color: 0x7af3ff, emissive: 0x1b7982, emissiveIntensity: 0.65 })
+        );
+        marker.position.set(u.x, u.y + 3.2, u.z);
+        userGroup.add(marker);
+
+        const label = document.createElement("div");
+        label.className = "floating-label";
+        label.textContent = "U" + (i + 1);
+        document.getElementById("labels-container").appendChild(label);
+        userLabelObjects.push({ world: marker.position, el: label });
+      }
+      scene.add(userGroup);
+
+      const particleGeo = new THREE.BufferGeometry();
+      const particleCount = 1300;
+      const arr = new Float32Array(particleCount * 3);
+      for (let i = 0; i < particleCount; i += 1) {
+        arr[i * 3 + 0] = (Math.random() - 0.5) * 380;
+        arr[i * 3 + 1] = -62 + Math.random() * 56;
+        arr[i * 3 + 2] = (Math.random() - 0.5) * 380;
+      }
+      particleGeo.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+      currentParticles = new THREE.Points(
+        particleGeo,
+        new THREE.PointsMaterial({ color: 0x45d8ff, size: 1.2, transparent: true, opacity: 0.6 })
+      );
+      scene.add(currentParticles);
+
+      const spawnY = OceanDemoShared.nearestTerrainHeight(terrain, -165, -150, -44) + 6;
+      submarine.position.set(-165, spawnY, -150);
+      submarine.rotation.set(0, 0, 0);
+      controls.target.copy(submarine.position);
+    }
+
+    function clearUserLabels() {
+      while (userLabelObjects.length > 0) {
+        const item = userLabelObjects.pop();
+        if (item.el && item.el.parentNode) {
+          item.el.parentNode.removeChild(item.el);
+        }
+      }
+    }
+
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onKeyDown(event) {
+      if (Object.prototype.hasOwnProperty.call(keyState, event.code)) {
+        keyState[event.code] = true;
+      }
+    }
+
+    function onKeyUp(event) {
+      if (Object.prototype.hasOwnProperty.call(keyState, event.code)) {
+        keyState[event.code] = false;
+      }
+    }
+
+    function sampleCurrent(pos, time) {
+      const baseX = 2.3 + Math.sin((pos.x + time * 20) * 0.01) * 1.2;
+      const baseZ = 1.7 + Math.cos((pos.z - time * 18) * 0.011) * 1.1;
+      const depthFactor = THREE.MathUtils.clamp((-pos.y) / 90, 0.2, 1.1);
+      return new THREE.Vector3(baseX * depthFactor, 0, baseZ * depthFactor);
+    }
+
+    function updateVehicle(dt, elapsed) {
+      const yawRate = 0.95;
+      if (keyState.KeyA) submarine.rotation.y += yawRate * dt;
+      if (keyState.KeyD) submarine.rotation.y -= yawRate * dt;
+
+      const forwardInput = (keyState.KeyW ? 1 : 0) - (keyState.KeyS ? 1 : 0);
+      const depthInput = (keyState.KeyR ? 1 : 0) - (keyState.KeyF ? 1 : 0);
+      const boost = keyState.ShiftLeft || keyState.ShiftRight ? 1.8 : 1.0;
+
+      const heading = new THREE.Vector3(Math.cos(submarine.rotation.y), 0, Math.sin(submarine.rotation.y));
+      const current = sampleCurrent(submarine.position, elapsed);
+      const forwardSpeed = 18 * forwardInput * boost;
+      const drift = current.clone().multiplyScalar(0.28);
+
+      const delta = heading.multiplyScalar(forwardSpeed * dt).add(drift.multiplyScalar(dt));
+      submarine.position.add(delta);
+
+      submarine.position.y += depthInput * 12 * dt;
+      submarine.position.y = THREE.MathUtils.clamp(submarine.position.y, -78, -6);
+
+      const seabedY = OceanDemoShared.nearestTerrainHeight(
+        mapData.terrainMap,
+        submarine.position.x,
+        submarine.position.z,
+        -56
+      );
+
+      if (submarine.position.y < seabedY + 3.5) {
+        submarine.position.y = seabedY + 3.5;
+      }
+
+      const speed = delta.length() / Math.max(dt, 1e-6);
+
+      ui.pos.textContent = [submarine.position.x, submarine.position.y, submarine.position.z]
+        .map(v => v.toFixed(1))
+        .join(", ");
+      ui.speed.textContent = speed.toFixed(2) + " u/s";
+      ui.depth.textContent = (-submarine.position.y).toFixed(1) + " m";
+      ui.current.textContent = [current.x.toFixed(2), current.z.toFixed(2)].join(", ") + " m/s";
+    }
+
+    function updateCurrentParticles(dt, elapsed) {
+      if (!currentParticles) return;
+      const arr = currentParticles.geometry.attributes.position.array;
+      for (let i = 0; i < arr.length; i += 3) {
+        const px = arr[i + 0];
+        const py = arr[i + 1];
+        const pz = arr[i + 2];
+        const flowX = 0.65 + Math.sin((pz + elapsed * 40) * 0.02) * 0.45;
+        const flowZ = 0.45 + Math.cos((px - elapsed * 35) * 0.02) * 0.4;
+        arr[i + 0] += flowX * dt * 7;
+        arr[i + 2] += flowZ * dt * 7;
+
+        if (arr[i + 0] > 210) arr[i + 0] = -210;
+        if (arr[i + 0] < -210) arr[i + 0] = 210;
+        if (arr[i + 2] > 210) arr[i + 2] = -210;
+        if (arr[i + 2] < -210) arr[i + 2] = 210;
+
+        arr[i + 1] = py + Math.sin((px + pz + elapsed * 50) * 0.02) * 0.06;
+      }
+      currentParticles.geometry.attributes.position.needsUpdate = true;
+    }
+
+    function updateLabels() {
+      for (let i = 0; i < userLabelObjects.length; i += 1) {
+        const item = userLabelObjects[i];
+        const p = item.world.clone().project(camera);
+        const sx = (p.x * 0.5 + 0.5) * window.innerWidth;
+        const sy = (p.y * -0.5 + 0.5) * window.innerHeight;
+        const visible = p.z < 1 && sx > 0 && sx < window.innerWidth && sy > 0 && sy < window.innerHeight;
+        item.el.style.display = visible ? "block" : "none";
+        if (visible) {
+          item.el.style.left = sx + "px";
+          item.el.style.top = sy + "px";
+        }
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      const elapsed = clock.elapsedTime;
+
+      updateVehicle(dt, elapsed);
+      updateCurrentParticles(dt, elapsed);
+
+      if (followMode) {
+        const followOffset = new THREE.Vector3(-40, 22, 0).applyEuler(new THREE.Euler(0, submarine.rotation.y, 0));
+        const targetPos = submarine.position.clone().add(followOffset);
+        camera.position.lerp(targetPos, 0.08);
+        controls.target.lerp(submarine.position, 0.12);
+      }
+
+      controls.update();
+      updateLabels();
+      renderer.render(scene, camera);
+    }
+
+    function bindUi() {
+      const btnOrbit = document.getElementById("btn-camera-orbit");
+      const btnFollow = document.getElementById("btn-camera-follow");
+      const btnSnapshot = document.getElementById("btn-snapshot");
+      const btnImport = document.getElementById("btn-import-env");
+      const btnExport = document.getElementById("btn-export-env");
+      const btnReset = document.getElementById("btn-reset");
+      const btnGoPath = document.getElementById("btn-go-path");
+      const fileInput = document.getElementById("file-input-env");
+
+      btnOrbit.onclick = function () {
+        followMode = false;
+        btnOrbit.classList.add("active");
+        btnFollow.classList.remove("active");
+      };
+      btnFollow.onclick = function () {
+        followMode = true;
+        btnFollow.classList.add("active");
+        btnOrbit.classList.remove("active");
+      };
+
+      btnSnapshot.onclick = function () {
+        html2canvas(document.body).then(function (canvas) {
+          const a = document.createElement("a");
+          a.href = canvas.toDataURL("image/png");
+          a.download = "oneocean_env_snapshot.png";
+          a.click();
+        });
+      };
+
+      btnExport.onclick = function () {
+        OceanDemoShared.downloadJson("ocean_map_data.json", mapData);
+      };
+
+      btnImport.onclick = function () {
+        fileInput.click();
+      };
+
+      OceanDemoShared.bindJsonImport(fileInput, async function (parsed) {
+        if (!parsed || !Array.isArray(parsed.terrainMap)) {
+          alert("Map JSON missing required field: terrainMap");
+          return;
+        }
+        await loadMapData(parsed);
+        rebuildEnvironment();
+      });
+
+      btnReset.onclick = async function () {
+        mapData = await OceanDemoShared.fetchJson(MAP_URL);
+        mapSource = "mock-default";
+        OceanDemoShared.cacheData("map", mapData);
+        rebuildEnvironment();
+      };
+
+      btnGoPath.onclick = function () {
+        window.location.href = "path.html";
+      };
+    }
+
+    boot().catch(function (error) {
+      console.error(error);
+      alert("Failed to start environment demo: " + error.message);
+    });
+  </script>
+</body>
+</html>
