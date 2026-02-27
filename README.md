@@ -1,29 +1,16 @@
-# OneOcean Online Demo (Agent E2)
+# OneOcean UUV Online Demo
 
-This folder hosts the interactive web demo (website part 3 in project README).
+This folder follows the `demo_ref` deployment layout and contains a browser demo adapted to underwater scenarios.
 
-## Current status
+## Files
 
-Implemented mock-first dual-page demo:
-- `index.html`: environment view (bathymetry + currents + UUV controls)
-- `path.html`: path/task view (experiment routes, static/fly replay)
+- `index.html`: interactive environment view (UUV control + currents)
+- `path.html`: experiment/path visualization page
+- `drone_map_data.json`: environment seed/state data (compatible schema)
+- `drone_path_data.json`: path/experiment data (compatible schema)
+- `example/`: static figures and GIF previews
 
-Preserved core UX from `demo_ref`:
-- JSON import/export
-- snapshot PNG
-- labels/legend
-- mode switching
-
-## Data files
-
-- `assets/data/ocean_map_data.json`
-- `assets/data/ocean_path_data.json`
-
-The schema intentionally stays compatible with `demo_ref` style keys for now.
-
-## Quick run
-
-Use any static file server from this folder, for example:
+## Run locally
 
 ```bash
 cd /data/private/user2/workspace/ocean/demo
@@ -31,32 +18,11 @@ python3 -m http.server 8080
 ```
 
 Open:
+
 - `http://localhost:8080/index.html`
 - `http://localhost:8080/path.html`
 
-## Validation helper
+## Notes
 
-```bash
-cd /data/private/user2/workspace/ocean
-python3 demo/tools/validate_demo_json.py \
-  --map demo/assets/data/ocean_map_data.json \
-  --path demo/assets/data/ocean_path_data.json
-```
-
-## Integration hooks (next)
-
-- Lane D -> map/path metadata consistency and variable mapping notes.
-- Lane A -> real trajectory exports (replace mock `experiments[].paths`).
-- Lane H -> optional camera presets or visual assets for richer presentation.
-
-Current direct handoff command from Lane H (S2 output -> this demo folder):
-
-```bash
-cd /data/private/user2/workspace/ocean/oneocean(iros-2026-code)
-PYTHONPATH=. /home/shuaijun/miniconda3/envs/habitat/bin/python \
-  -m oneocean_sim_habitat.cli.publish_e2_demo_assets \
-  --run-dir runs/<your_s2_run_dir> \
-  --target-dir /data/private/user2/workspace/ocean/demo/assets/data
-```
-
-The frontend data loading is intentionally abstracted in `assets/js/ocean_demo_shared.js` and page-level `loadMapData` / `loadPathData` functions to minimize rewrite during integration.
+- Control/input logic is preserved from the reference online demo.
+- Visual changes focus on seabed terrain, coral/seagrass objects, UUV-style vehicle, current particles, and water surface details.
