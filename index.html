@@ -366,12 +366,12 @@
             <h2>Welcome to OneOcean UUV Simulation Demo</h2>
             
             <p>This is an <strong>interactive underwater simulation demo</strong> for ocean robotics scene prototyping.</p>
-            <p><strong>What you can see:</strong> continuous seabed terrain, deep trenches, dense seagrass/coral areas, pollutant targets, and dynamic current particles.</p>
+            <p><strong>What you can see:</strong> continuous seabed terrain, deep trenches, dense seagrass/coral areas, pollution targets, and dynamic current particles.</p>
             <ul>
                 <li><strong>Vehicle:</strong> UUV/AUV body with rear ducted propellers and spotlights</li>
                 <li><strong>Environment:</strong> larger map with varied relief and localized terrain features</li>
                 <li><strong>Water:</strong> animated surface waves + depth-dependent lighting attenuation</li>
-                <li><strong>Tasks:</strong> measure distance to floating and underwater pollutant targets</li>
+                <li><strong>Tasks:</strong> measure distance to floating and underwater pollution targets</li>
             </ul>
             <p>Controls remain aligned with the reference online demo.</p>
 
@@ -492,7 +492,7 @@
 
         <div class="divider"></div>
 
-        <div class="section-title">POLLUTANT TARGETS</div>
+        <div class="section-title">POLLUTION TARGETS</div>
         <div id="user-list">
             <!-- Populated via JS -->
         </div>
@@ -523,7 +523,7 @@
 
     <div id="warning-msg">COLLISION DETECTED</div>
 
-    <button id="btn-results" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #2196f3; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Check Experiment Paths &rarr;</button>
+    <button id="btn-results" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #6f5cff; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Open Tasks &rarr;</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -559,7 +559,7 @@
         };
 
         // Storage Key
-        const STORAGE_KEY = 'oneocean_uuv_env_v1';
+        const STORAGE_KEY = 'oneocean_uuv_env_v2';
 
         // Load Environment Data from localStorage only
         const savedData = localStorage.getItem(STORAGE_KEY);
@@ -594,7 +594,7 @@
         scene.fog = new THREE.FogExp2(fogColor, 0.0018);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 7000); 
-        camera.position.set(0, 190, 240); 
+        camera.position.set(0, 150, 240); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -618,9 +618,9 @@
         // --- Sky Dome (custom, not copied from demo_ref/1.html) ---
         const skyUniforms = {
             time: { value: 0.0 },
-            topColor: { value: new THREE.Color(0x130a2a) },
-            horizonColor: { value: new THREE.Color(0x6f5cff) },
-            bottomColor: { value: new THREE.Color(0xb6ccff) }
+            topColor: { value: new THREE.Color(0x061828) },
+            horizonColor: { value: new THREE.Color(0x2a6f9f) },
+            bottomColor: { value: new THREE.Color(0xb9d8ef) }
         };
         const skyDome = new THREE.Mesh(
             new THREE.SphereGeometry(5200, 36, 24),
@@ -668,7 +668,7 @@
         const MAP_HALF_SIZE = MAP_SIZE / 2;
         const MAX_ALT = 280.0;
         const REEF_FLOOR = -40.0;
-        const WATER_SURFACE_Y = MAX_ALT - 8;
+        const WATER_SURFACE_Y = 170.0;
 
         const lakes = [];
 
@@ -740,12 +740,14 @@
 
         // --- Water Surface Detail ---
         function getSurfaceWave(x, z, time) {
-            const w1 = Math.sin(x * 0.018 + time * 1.55 + z * 0.010) * 0.78;
-            const w2 = Math.cos(z * 0.024 + time * 1.15 + x * 0.008) * 0.52;
-            const w3 = Math.sin((x + z) * 0.014 + time * 2.35) * 0.26;
-            const w4 = Math.sin((x * 0.055 - z * 0.045) + time * 1.9) * 0.18;
-            const wn = simplex.noise3D(x * 0.006, z * 0.006, time * 0.22) * 0.28;
-            return w1 + w2 + w3 + w4 + wn;
+            // Multi-frequency surface waves (inspired by demo_ref/other demo refs/1.html)
+            const base = Math.sin(x * 0.03 + time * 2.4) * 1.7
+                + Math.cos(z * 0.04 + time * 1.8) * 1.1
+                + Math.sin((x + z) * 0.1 + time * 3.8) * 0.45;
+            const swell = Math.sin(x * 0.012 + z * 0.009 + time * 0.9) * 0.6;
+            const micro = Math.sin((x * 0.055 - z * 0.045) + time * 1.9) * 0.18;
+            const wn = simplex.noise3D(x * 0.004, z * 0.004, time * 0.2) * 0.25;
+            return base + swell + micro + wn;
         }
 
         const waterGeo = new THREE.PlaneGeometry(MAP_SIZE * 1.04, MAP_SIZE * 1.04, 240, 240);
@@ -760,11 +762,11 @@
         const waterSurface = new THREE.Mesh(
             waterGeo,
             new THREE.MeshPhongMaterial({
-                color: 0x0b3b4b,
-                specular: 0x7fdcff,
-                shininess: 220,
+                color: 0x0a3a4a,
+                specular: 0x55ccff,
+                shininess: 300,
                 transparent: true,
-                opacity: 0.62,
+                opacity: 0.78,
                 side: THREE.DoubleSide,
                 depthWrite: false
             })
@@ -872,6 +874,33 @@
         }
         coralMesh.count = cCount;
         scene.add(coralMesh);
+
+        // --- Shells ---
+        const shellGeo = new THREE.SphereGeometry(0.8, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.62);
+        shellGeo.translate(0, 0.1, 0);
+        const shellMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c4, roughness: 0.92, metalness: 0.05, flatShading: true });
+        const shellMesh = new THREE.InstancedMesh(shellGeo, shellMat, 2400);
+        shellMesh.castShadow = false;
+        shellMesh.receiveShadow = true;
+        let shCount = 0;
+        attempts = 0;
+        while (shCount < 1600 && attempts < 80000) {
+            attempts++;
+            const x = (random() - 0.5) * 1700;
+            const z = (random() - 0.5) * 1700;
+            const h = getTerrainHeight(x, z);
+            if (h < REEF_FLOOR - 12 || h > 55) continue;
+            const sand = 0.5 + 0.5 * simplex.noise2D(x * 0.004, z * 0.004);
+            if (random() > Math.min(1.0, sand * 0.7)) continue;
+            dummy.position.set(x, h + 0.12, z);
+            const s = 0.22 + random() * 0.85;
+            dummy.scale.set(s * (0.75 + random() * 0.5), s, s * (0.75 + random() * 0.5));
+            dummy.rotation.set((random() - 0.5) * 0.4, random() * Math.PI * 2, (random() - 0.5) * 0.4);
+            dummy.updateMatrix();
+            shellMesh.setMatrixAt(shCount++, dummy.matrix);
+        }
+        shellMesh.count = shCount;
+        scene.add(shellMesh);
 
         // --- Current Particles ---
         const particleCount = 4600;
@@ -1480,71 +1509,79 @@
         const pollutionTargets = [];
         function createPollutionMarker(target) {
             const group = new THREE.Group();
-            if (target.kind === 'BARREL') {
-                const barrel = new THREE.Mesh(
-                    new THREE.CylinderGeometry(1.0, 1.0, 2.2, 18),
-                    new THREE.MeshStandardMaterial({ color: 0x6f5329, roughness: 0.8, metalness: 0.25 })
-                );
-                group.add(barrel);
-                const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.08, 8, 18), new THREE.MeshStandardMaterial({ color: 0x2f3235 }));
-                ring1.position.y = 0.76;
-                ring1.rotation.x = Math.PI / 2;
-                group.add(ring1);
-                const ring2 = ring1.clone();
-                ring2.position.y = -0.76;
-                group.add(ring2);
-                const sign = new THREE.Mesh(
-                    new THREE.PlaneGeometry(0.95, 0.95),
-                    new THREE.MeshBasicMaterial({ color: 0xf3d24a, side: THREE.DoubleSide })
-                );
-                sign.position.set(0, 0.2, 1.03);
-                group.add(sign);
-                const hazard = new THREE.Mesh(
-                    new THREE.RingGeometry(0.14, 0.28, 3),
-                    new THREE.MeshBasicMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide })
-                );
-                hazard.position.copy(sign.position.clone().add(new THREE.Vector3(0, 0.0, 0.02)));
-                hazard.rotation.z = Math.PI / 6;
-                group.add(hazard);
-            } else {
-                const clusterMat = new THREE.MeshStandardMaterial({ color: 0xb8b4a4, roughness: 0.86 });
-                for (let i = 0; i < 9; i++) {
-                    const part = new THREE.Mesh(
-                        i % 2 === 0 ? new THREE.BoxGeometry(0.6 + random() * 0.8, 0.2 + random() * 0.26, 0.5 + random() * 0.8) : new THREE.SphereGeometry(0.26 + random() * 0.24, 8, 8),
-                        clusterMat
-                    );
-                    part.position.set((random() - 0.5) * 2.6, (random() - 0.5) * 0.22, (random() - 0.5) * 2.6);
-                    part.rotation.set(random(), random(), random());
-                    group.add(part);
-                }
-            }
+
+            const barrelYellowMat = new THREE.MeshStandardMaterial({
+                color: 0xf3d24a,
+                roughness: 0.55,
+                metalness: 0.12,
+                emissive: 0x3a2c00,
+                emissiveIntensity: 0.08
+            });
+            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 2.2, 18), barrelYellowMat);
+            group.add(barrel);
+
+            const ringMat = new THREE.MeshStandardMaterial({ color: 0x2f3235, roughness: 0.75, metalness: 0.15 });
+            const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.08, 8, 18), ringMat);
+            ring1.position.y = 0.76;
+            ring1.rotation.x = Math.PI / 2;
+            group.add(ring1);
+            const ring2 = ring1.clone();
+            ring2.position.y = -0.76;
+            group.add(ring2);
+
+            const stripe = new THREE.Mesh(
+                new THREE.TorusGeometry(0.98, 0.06, 8, 18),
+                new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 })
+            );
+            stripe.rotation.x = Math.PI / 2;
+            group.add(stripe);
+
+            const sign = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.95, 0.95),
+                new THREE.MeshBasicMaterial({ color: 0xf3d24a, side: THREE.DoubleSide })
+            );
+            sign.position.set(0, 0.2, 1.03);
+            group.add(sign);
+            const hazard = new THREE.Mesh(
+                new THREE.RingGeometry(0.14, 0.28, 3),
+                new THREE.MeshBasicMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide })
+            );
+            hazard.position.copy(sign.position.clone().add(new THREE.Vector3(0, 0.0, 0.02)));
+            hazard.rotation.z = Math.PI / 6;
+            group.add(hazard);
+
             group.position.copy(target.pos);
             scene.add(group);
             target.mesh = group;
         }
 
-        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length !== 8) {
+        const UNDERWATER_POLLUTION_COUNT = 6;
+        const SURFACE_POLLUTION_COUNT = 18;
+        const EXPECTED_POLLUTION_COUNT = UNDERWATER_POLLUTION_COUNT + SURFACE_POLLUTION_COUNT;
+
+        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length !== EXPECTED_POLLUTION_COUNT) {
             worldState.finalUsers = [];
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < UNDERWATER_POLLUTION_COUNT; i++) {
                 const x = (random() - 0.5) * (MAP_SIZE * 0.8);
                 const z = (random() - 0.5) * (MAP_SIZE * 0.8);
-                worldState.finalUsers.push({ x, y: getTerrainHeight(x, z) + 1.3 + random() * 2.4, z, kind: 'BARREL' });
+                worldState.finalUsers.push({ x, y: getTerrainHeight(x, z) + 1.1 + random() * 2.2, z, kind: 'POLLUTION', floating: false });
             }
-            for (let i = 0; i < 3; i++) {
-                const x = (random() - 0.5) * (MAP_SIZE * 0.72);
-                const z = (random() - 0.5) * (MAP_SIZE * 0.72);
-                worldState.finalUsers.push({ x, y: WATER_SURFACE_Y + random() * 0.9, z, kind: 'SURFACE_CLUSTER', phase: random() * Math.PI * 2 });
+            for (let i = 0; i < SURFACE_POLLUTION_COUNT; i++) {
+                const x = (random() - 0.5) * (MAP_SIZE * 0.9);
+                const z = (random() - 0.5) * (MAP_SIZE * 0.9);
+                worldState.finalUsers.push({ x, y: WATER_SURFACE_Y, z, kind: 'POLLUTION', floating: true, phase: random() * Math.PI * 2 });
             }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(worldState));
         }
 
         const userDataElements = [];
         worldState.finalUsers.forEach((p, i) => {
-            const kind = p.kind || (i < 5 ? 'BARREL' : 'SURFACE_CLUSTER');
-            const id = kind === 'SURFACE_CLUSTER' ? `POLLUTION_CLUSTER_${i + 1}` : `WASTE_BARREL_${i + 1}`;
+            const floating = !!p.floating;
+            const id = floating ? `POLLUTION_SURFACE_${i + 1}` : `POLLUTION_${i + 1}`;
             const target = {
                 id,
-                kind,
+                kind: 'POLLUTION',
+                floating,
                 phase: p.phase || random() * Math.PI * 2,
                 pos: new THREE.Vector3(p.x, p.y, p.z)
             };
@@ -1794,12 +1831,25 @@
             windParticles.geometry.attributes.position.needsUpdate=true;
 
             pollutionTargets.forEach(target => {
-                if (target.kind === 'SURFACE_CLUSTER') {
-                    target.pos.y = WATER_SURFACE_Y + getSurfaceWave(target.pos.x, target.pos.z, time);
+                if (target.floating) {
+                    target.pos.y = WATER_SURFACE_Y + getSurfaceWave(target.pos.x, target.pos.z, time) - 0.25;
                 }
                 if (target.mesh) {
                     target.mesh.position.copy(target.pos);
-                    target.mesh.rotation.y += 0.002 + (target.kind === 'SURFACE_CLUSTER' ? 0.0018 : 0.0008);
+                    target.mesh.rotation.y += 0.0016;
+                    if (target.floating) {
+                        const dx = 10;
+                        const x = target.pos.x;
+                        const z = target.pos.z;
+                        const wxp = getSurfaceWave(x + dx, z, time);
+                        const wxm = getSurfaceWave(x - dx, z, time);
+                        const wzp = getSurfaceWave(x, z + dx, time);
+                        const wzm = getSurfaceWave(x, z - dx, time);
+                        const slopeX = (wxp - wxm) / (2 * dx);
+                        const slopeZ = (wzp - wzm) / (2 * dx);
+                        target.mesh.rotation.x = THREE.MathUtils.clamp(-slopeZ * 0.22, -0.12, 0.12);
+                        target.mesh.rotation.z = THREE.MathUtils.clamp(slopeX * 0.22, -0.12, 0.12);
+                    }
                 }
             });
 
@@ -1813,10 +1863,10 @@
             });
 
             userDataElements.forEach(userData => {
-                const pollutantPos = userData.target.pos;
-                const distance = droneGroup.position.distanceTo(pollutantPos);
+                const pollutionPos = userData.target.pos;
+                const distance = droneGroup.position.distanceTo(pollutionPos);
                 const id = userData.target.id;
-                const posStr = `[${pollutantPos.x.toFixed(0)},${pollutantPos.y.toFixed(1)},${pollutantPos.z.toFixed(0)}]`;
+                const posStr = `[${pollutionPos.x.toFixed(0)},${pollutionPos.y.toFixed(1)},${pollutionPos.z.toFixed(0)}]`;
                 userData.coordSpan.innerHTML = `${id} ${posStr} <span style="color:#6f5cff">| Distance: ${distance.toFixed(1)} m</span>`;
                 userData.row.title = `Distance ${distance.toFixed(1)} m`;
             });
@@ -1859,7 +1909,7 @@
             }
         });
 
-        document.getElementById('btn-results').onclick = () => window.location.href = 'path.html';
+        document.getElementById('btn-results').onclick = () => window.location.href = 'tasks.html';
 
         animate();
     </script>
