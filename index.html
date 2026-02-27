@@ -1347,9 +1347,14 @@
         btnFPV.addEventListener('click', () => setViewMode('FPV'));
         
         // Fog Control
-        fogDensityControl.addEventListener('input', (e) => {
-            scene.fog.density = parseFloat(e.target.value);
-        });
+        let fogUserDensity = scene.fog ? scene.fog.density : 0.0018;
+        if (fogDensityControl) {
+            fogUserDensity = parseFloat(fogDensityControl.value);
+            fogDensityControl.value = String(fogUserDensity);
+            fogDensityControl.addEventListener('input', (e) => {
+                fogUserDensity = parseFloat(e.target.value);
+            });
+        }
 
         btnSimple.addEventListener('click', () => setControlMode('SIMPLE'));
         btnPID.addEventListener('click', () => setControlMode('CONTROL')); 
@@ -1592,7 +1597,8 @@
             const depthDark = 0.36 + depthNorm * 0.72;
             hemiLight.intensity = 0.26 + depthDark * 0.58;
             dirLight.intensity = 0.2 + depthDark * 0.65;
-            scene.fog.density = 0.0016 + (1 - depthNorm) * 0.0013;
+            // Keep fog density user-controllable (avoid overriding slider each frame)
+            scene.fog.density = fogUserDensity;
 
             const forwardAxis = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), droneGroup.rotation.y);
             const forwardSpeedForFx = velocity.dot(forwardAxis);
