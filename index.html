@@ -143,15 +143,15 @@
         #btn-snapshot:hover { background: #555; }
         #btn-snapshot:active { background: #000; }
         
-        /* Action Buttons */
+        /* Action Buttons (lower saturation, purple/black stay as-is) */
         #btn-export {
-            background: #00796b; color: white;
+            background: #6b8f8a; color: white;
         }
         #btn-import {
-            background: #0288d1; color: white;
+            background: #7a9fb5; color: white;
         }
         #btn-reset {
-            background: #d32f2f; color: white; margin-top: 5px; width: 100%;
+            background: #b87070; color: white; margin-top: 5px; width: 100%;
         }
         
         /* Hidden file input */
@@ -212,6 +212,22 @@
             text-align: center;
             border: 1px solid rgba(255,255,255,0.2);
             z-index: 100;
+        }
+
+        #dive-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 22px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px black;
+            pointer-events: none;
+            text-align: center;
+            z-index: 100;
+            display: none;
+            font-family: 'Courier New', Courier, monospace;
         }
 
         #warning-msg {
@@ -340,7 +356,7 @@
         }
 
         #welcome-close:hover {
-            background: #197fa9;
+            background: #7a9f7a;
         }
 
         #welcome-close:active {
@@ -366,36 +382,35 @@
             <h2>Welcome to OneOcean UUV Simulation Demo</h2>
             
             <p>This is an <strong>interactive underwater simulation demo</strong> for ocean robotics scene prototyping.</p>
-            <p><strong>What you can see:</strong> continuous seabed terrain, deep trenches, dense seagrass/coral areas, pollution targets, and dynamic current particles.</p>
+            <p><strong>What you can see:</strong> continuous seabed terrain, deep trenches, dense seagrass/coral areas, pollutant targets, and dynamic current particles.</p>
             <ul>
                 <li><strong>Vehicle:</strong> UUV/AUV body with rear ducted propellers and spotlights</li>
                 <li><strong>Environment:</strong> larger map with varied relief and localized terrain features</li>
                 <li><strong>Water:</strong> animated surface waves + depth-dependent lighting attenuation</li>
-                <li><strong>Tasks:</strong> measure distance to floating and underwater pollution targets</li>
+                <li><strong>Tasks:</strong> measure distance to floating and underwater pollutant targets</li>
             </ul>
             <p>Controls remain aligned with the reference online demo.</p>
 
             <div class="controls-info">
                 <strong>Quick Start:</strong>
-                <table style="width: 100%; margin-top: 8px; border-collapse: collapse;">
+                <table style="margin-top: 8px; border-collapse: collapse;">
                     <tr>
-                        <td style="padding: 4px 8px;"><strong>W/S:</strong></td>
-                        <td style="padding: 4px 8px;">Pitch (forward/backward)</td>
+                        <td style="padding: 4px 6px 4px 0; white-space: nowrap;"><strong>W/S:</strong></td>
+                        <td style="padding: 4px 0;">Pitch (forward/backward)</td>
                     </tr>
                     <tr>
-                        <td style="padding: 4px 8px;"><strong>A/D:</strong></td>
-                        <td style="padding: 4px 8px;">Roll (left/right)</td>
+                        <td style="padding: 4px 6px 4px 0; white-space: nowrap;"><strong>A/D:</strong></td>
+                        <td style="padding: 4px 0;">Roll (left/right)</td>
                     </tr>
                     <tr>
-                        <td style="padding: 4px 8px;"><strong>↑/↓:</strong></td>
-                        <td style="padding: 4px 8px;">Altitude</td>
+                        <td style="padding: 4px 6px 4px 0; white-space: nowrap;"><strong>↑/↓:</strong></td>
+                        <td style="padding: 4px 0;">Altitude (depth)</td>
                     </tr>
                     <tr>
-                        <td style="padding: 4px 8px;"><strong>←/→:</strong></td>
-                        <td style="padding: 4px 8px;">Yaw rotation</td>
+                        <td style="padding: 4px 6px 4px 0; white-space: nowrap;"><strong>←/→:</strong></td>
+                        <td style="padding: 4px 0;">Yaw rotation</td>
                     </tr>
                 </table>
-                <div style="margin-top: 8px; font-size: 11px;">Controls use a single <strong>Manual</strong> mode (keyboard).</div>
             </div>
 
             <div id="welcome-checkbox">
@@ -436,64 +451,46 @@
             <span class="ui-label">SPEED:</span>
             <span class="ui-value" id="speed-val">0.0 m/s</span>
         </div>
-        <div class="ui-row">
-            <span class="ui-label">ACCEL:</span>
-            <span class="ui-value" id="accel-val">0.00 m/s²</span>
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">ATTITUDE (P/R):</span>
-            <span class="ui-value" id="att-val">0°, 0°</span>
-        </div>
 
         <!-- Env Vars -->
         <div class="section-title">ENVIRONMENT</div>
+        <div class="ui-row">
+            <span class="ui-label">TEMPERATURE:</span>
+            <span class="ui-value" id="temp-val">— °C</span>
+        </div>
+        <div class="ui-row">
+            <span class="ui-label">SALINITY:</span>
+            <span class="ui-value" id="salinity-val">— (1e-3)</span>
+        </div>
         <div class="ui-row">
             <span class="ui-label">CURRENT:</span>
             <span class="ui-value" id="wind-val">4.2 m/s NW</span>
         </div>
         <div class="ui-row">
-            <span class="ui-label">COLLISION:</span>
-            <span class="ui-value" id="collision-status">FALSE</span>
+            <span class="ui-label">EASTWARD VELOCITY:</span>
+            <span class="ui-value" id="east-vel-val">— m/s</span>
+        </div>
+        <div class="ui-row">
+            <span class="ui-label">NORTHWARD VELOCITY:</span>
+            <span class="ui-value" id="north-vel-val">— m/s</span>
         </div>
         <div class="disclaimer">
             <span class="legend-dot"></span> Cyan particles visualize ocean currents
         </div>
         <div class="ui-row" style="margin-top: 5px;">
             <span class="ui-label">FOG:</span>
-            <input type="range" id="fog-density-control" min="0" max="0.02" step="0.0005" value="0.002" style="width: 70px;">
-        </div>
-
-        <!-- Physics Config -->
-        <div class="section-title">PHYSICS CONFIG</div>
-        <div class="disclaimer">
-            * Manual: direct velocity-style control.<br>
-            * Single-mode manual control (no mode switching).
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">MAX_ACCEL:</span>
-            <span class="ui-value">5.28 m/s²</span>
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">MAX_H_SPEED:</span>
-            <span class="ui-value">60.0 m/s</span>
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">MAX_ALTITUDE:</span>
-            <span class="ui-value">280.0 m</span>
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">DRAG_COEFF:</span>
-            <span class="ui-value">0.5</span>
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">MOTORS (RPM%):</span>
-            <span class="ui-value" id="motor-val">0, 0, 0, 0</span>
+            <input type="range" id="fog-density-control" min="0" max="0.02" step="0.0005" value="0" style="width: 70px;">
         </div>
 
         <div class="divider"></div>
 
         <div class="section-title">POLLUTION TARGETS</div>
         <div id="user-list">
+            <!-- Populated via JS -->
+        </div>
+
+        <div class="section-title" style="margin-top:8px;">FISH SCHOOLS</div>
+        <div id="fish-list">
             <!-- Populated via JS -->
         </div>
 
@@ -521,9 +518,11 @@
         W/S: Surge (Fwd/Back) | A/D: Sway (Left/Right) | ↑/↓: Depth | ←/→: Yaw
     </div>
 
+    <div id="dive-hint">Press ↓ to dive underwater</div>
+
     <div id="warning-msg">COLLISION DETECTED</div>
 
-    <button id="btn-results" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #6f5cff; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Open Tasks &rarr;</button>
+    <button id="btn-results" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #6f5cff; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Open Our Tasks Demo &rarr;</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -555,7 +554,8 @@
             mountainBuildings: [],
             buildingColliders: [],
             cabinPositions: [],
-            finalUsers: []
+            finalUsers: [],
+            pollutionClusters: []  // [{ clusterId, centerX, centerZ, points: [{dx, dz}, ...] }, ...]
         };
 
         // Storage Key
@@ -591,10 +591,10 @@
         const scene = new THREE.Scene();
         const fogColor = 0x0d3a55;
         scene.background = new THREE.Color(fogColor);
-        scene.fog = new THREE.FogExp2(fogColor, 0.0018);
+        scene.fog = new THREE.FogExp2(fogColor, 0);
 
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 7000); 
-        camera.position.set(0, 150, 240); 
+        camera.position.set(0, 168, 95); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -615,12 +615,12 @@
         dirLight.shadow.camera.top = 500; dirLight.shadow.camera.bottom = -500;
         scene.add(dirLight);
 
-        // --- Sky Dome (custom, not copied from demo_ref/1.html) ---
+        // --- Sky Dome ---
         const skyUniforms = {
             time: { value: 0.0 },
-            topColor: { value: new THREE.Color(0x061828) },
-            horizonColor: { value: new THREE.Color(0x2a6f9f) },
-            bottomColor: { value: new THREE.Color(0xb9d8ef) }
+            topColor: { value: new THREE.Color(0x0d47a1) },
+            horizonColor: { value: new THREE.Color(0x42a5f5) },
+            bottomColor: { value: new THREE.Color(0x90caf9) }
         };
         const skyDome = new THREE.Mesh(
             new THREE.SphereGeometry(5200, 36, 24),
@@ -634,21 +634,20 @@
                         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
                     }
                 `,
-                fragmentShader: `
-                    uniform float time;
-                    uniform vec3 topColor;
-                    uniform vec3 horizonColor;
-                    uniform vec3 bottomColor;
-                    varying vec3 vWorldPosition;
+                    fragmentShader: `
+                        uniform float time;
+                        uniform vec3 topColor;
+                        uniform vec3 horizonColor;
+                        uniform vec3 bottomColor;
+                        varying vec3 vWorldPosition;
                     void main() {
                         vec3 p = normalize(vWorldPosition);
                         float h = clamp(p.y * 0.5 + 0.5, 0.0, 1.0);
-                        float horizon = smoothstep(0.44, 0.54, h);
+                        float horizon = smoothstep(0.35, 0.55, h);
                         vec3 col = mix(bottomColor, horizonColor, horizon);
-                        col = mix(col, topColor, smoothstep(0.62, 1.0, h));
-                        // subtle animated haze bands near the horizon
-                        float band = sin((p.x * 7.0 + p.z * 6.0) + time * 0.15) * 0.5 + 0.5;
-                        float haze = (1.0 - smoothstep(0.50, 0.70, h)) * 0.06 * band;
+                        col = mix(col, topColor, smoothstep(0.55, 0.95, h));
+                        float band = sin((p.x * 5.0 + p.z * 4.0) + time * 0.1) * 0.5 + 0.5;
+                        float haze = (1.0 - smoothstep(0.45, 0.65, h)) * 0.04 * band;
                         col += vec3(haze);
                         gl_FragColor = vec4(col, 1.0);
                     }
@@ -659,7 +658,35 @@
             })
         );
         skyDome.frustumCulled = false;
-        scene.add(skyDome);
+
+        const skyGroup = new THREE.Group();
+        skyGroup.add(skyDome);
+
+        const sunGeo = new THREE.SphereGeometry(140, 32, 32);
+        const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff5d0, transparent: true, opacity: 0.98 });
+        const sun = new THREE.Mesh(sunGeo, sunMat);
+        sun.position.set(550, 850, 500);
+        sun.scale.set(1, 1, 1);
+        skyGroup.add(sun);
+
+        const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false });
+        const cloudGeo1 = new THREE.PlaneGeometry(380, 120);
+        const cloud1 = new THREE.Mesh(cloudGeo1, cloudMat);
+        cloud1.position.set(-280, 420, -600);
+        cloud1.rotation.set(0.2, 0.5, 0.1);
+        skyGroup.add(cloud1);
+        const cloudGeo2 = new THREE.PlaneGeometry(320, 100);
+        const cloud2 = new THREE.Mesh(cloudGeo2, cloudMat.clone());
+        cloud2.position.set(400, 380, -500);
+        cloud2.rotation.set(-0.1, 0.8, 0.15);
+        skyGroup.add(cloud2);
+        const cloudGeo3 = new THREE.PlaneGeometry(260, 90);
+        const cloud3 = new THREE.Mesh(cloudGeo3, cloudMat.clone());
+        cloud3.position.set(-100, 500, -700);
+        cloud3.rotation.set(0.3, 0.2, -0.1);
+        skyGroup.add(cloud3);
+
+        scene.add(skyGroup);
 
         // --- 3. Terrain & Environment ---
         // Pass our custom random function to SimplexNoise for deterministic terrain
@@ -692,21 +719,66 @@
         function isInLake() { return false; }
         function isOnRoad() { return false; }
 
+        const TERRAIN_HEIGHT_SCALE = 1.28;
+        // Corner layout (top-down view, +X to the right, +Z forward):
+        // - Coast corner:  ( +MAP_HALF_SIZE, +MAP_HALF_SIZE ) → beach + land plateau
+        // - Deep-ocean corner: ( -MAP_HALF_SIZE, -MAP_HALF_SIZE ) → extra-deep basin
+        const COAST_CORNER = new THREE.Vector2(MAP_HALF_SIZE, MAP_HALF_SIZE);
+        const DEEP_CORNER = new THREE.Vector2(-MAP_HALF_SIZE, -MAP_HALF_SIZE);
+        const COAST_RADIUS = 900;
+        const DEEP_RADIUS = 800;
+        const COAST_RAMP_DIST = 980;
+        const DEEP_RAMP_DIST = 600;
+        const BEACH_LAND_H = WATER_SURFACE_Y + 6;
+        function getCoastBlend(x, z) {
+            const dx = x - COAST_CORNER.x, dz = z - COAST_CORNER.y;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            return Math.max(0, Math.min(1, (COAST_RADIUS - dist) / COAST_RADIUS));
+        }
+        function getDeepBlend(x, z) {
+            const dx = x - DEEP_CORNER.x, dz = z - DEEP_CORNER.y;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            return Math.max(0, Math.min(1, (DEEP_RADIUS - dist) / DEEP_RADIUS));
+        }
         function getTerrainHeight(x, z) {
-            const broad = simplex.noise2D(x * 0.0018, z * 0.0018) * 26;
-            const medium = simplex.noise2D(x * 0.006, z * 0.006) * 10;
-            const fine = simplex.noise2D(x * 0.028, z * 0.028) * 2.2;
-            const ridge = Math.sin(x * 0.0017 + z * 0.0022) * 8;
+            const broad = simplex.noise2D(x * 0.0018, z * 0.0018) * 26 * TERRAIN_HEIGHT_SCALE;
+            const medium = simplex.noise2D(x * 0.006, z * 0.006) * 10 * TERRAIN_HEIGHT_SCALE;
+            const fine = simplex.noise2D(x * 0.028, z * 0.028) * 2.2 * TERRAIN_HEIGHT_SCALE;
+            const ridge = Math.sin(x * 0.0017 + z * 0.0022) * 8 * TERRAIN_HEIGHT_SCALE;
 
-            const trench1 = -42 * Math.exp(-((x + 260) ** 2) / 90000 - ((z - 180) ** 2) / 260000);
-            const trench2 = -35 * Math.exp(-((x - 420) ** 2) / 130000 - ((z + 260) ** 2) / 110000);
-            const crack = -24 * Math.exp(-((z + 0.28 * x - 120) ** 2) / 2800);
-            const escarp = Math.max(0, (Math.sqrt(x * x + z * z) - 520) * 0.03);
+            const trench1 = -42 * Math.exp(-((x + 260) ** 2) / 90000 - ((z - 180) ** 2) / 260000) * TERRAIN_HEIGHT_SCALE;
+            const trench2 = -35 * Math.exp(-((x - 420) ** 2) / 130000 - ((z + 260) ** 2) / 110000) * TERRAIN_HEIGHT_SCALE;
+            const crack = -24 * Math.exp(-((z + 0.28 * x - 120) ** 2) / 2800) * TERRAIN_HEIGHT_SCALE;
+            const escarp = Math.max(0, (Math.sqrt(x * x + z * z) - 520) * 0.03 * TERRAIN_HEIGHT_SCALE);
 
-            return REEF_FLOOR + broad + medium + fine + ridge + trench1 + trench2 + crack + escarp;
+            let base = REEF_FLOOR + broad + medium + fine + ridge + trench1 + trench2 + crack + escarp;
+
+            const coastBlend = getCoastBlend(x, z);
+            const deepBlend = getDeepBlend(x, z);
+            const distCoast = Math.sqrt((x - COAST_CORNER.x) ** 2 + (z - COAST_CORNER.y) ** 2);
+            const distDeep = Math.sqrt((x - DEEP_CORNER.x) ** 2 + (z - DEEP_CORNER.y) ** 2);
+            const coastRamp = coastBlend * Math.max(0, 1 - distCoast / COAST_RAMP_DIST);
+            const deepRamp = deepBlend * Math.max(0, 1 - distDeep / DEEP_RAMP_DIST);
+            base += coastRamp * Math.max(0, WATER_SURFACE_Y + 32 - base);
+            base -= deepRamp * 38;
+
+            return base;
+        }
+        function getSmoothedTerrainHeight(x, z, radius) {
+            radius = radius || 100;
+            const h0 = getTerrainHeight(x, z);
+            const h1 = getTerrainHeight(x + radius, z);
+            const h2 = getTerrainHeight(x - radius, z);
+            const h3 = getTerrainHeight(x, z + radius);
+            const h4 = getTerrainHeight(x, z - radius);
+            const h5 = getTerrainHeight(x + radius * 0.7, z + radius * 0.7);
+            const h6 = getTerrainHeight(x - radius * 0.7, z + radius * 0.7);
+            const h7 = getTerrainHeight(x + radius * 0.7, z - radius * 0.7);
+            const h8 = getTerrainHeight(x - radius * 0.7, z - radius * 0.7);
+            return (h0 + h1 + h2 + h3 + h4 + h5 + h6 + h7 + h8) / 9;
         }
 
-        // --- Seabed ---
+        // --- Seabed mesh (full MAP_SIZE square, with coast & deep-corner modulation applied) ---
         const planeSize = MAP_SIZE;
         const vertexCount = 620;
         const geometry = new THREE.PlaneGeometry(planeSize, planeSize, vertexCount, vertexCount);
@@ -715,13 +787,32 @@
         const colors = [];
         const cDeep = new THREE.Color(0x082733);
         const cShallow = new THREE.Color(0x4f7f79);
+        const cSand = new THREE.Color(0xd4b85c);
+        const cSandLight = new THREE.Color(0xe8d48c);
+        const cLand = new THREE.Color(0x1a3d1a);
+        const cLandDark = new THREE.Color(0x0f2610);
         for (let i = 0; i < positions.count; i++) {
             const x = positions.getX(i);
             const z = positions.getZ(i);
             const h = getTerrainHeight(x, z);
             positions.setY(i, h);
-            const t = Math.max(0, Math.min(1, (h - REEF_FLOOR + 8) / 28));
-            const c = cDeep.clone().lerp(cShallow, t);
+            const coastBlend = getCoastBlend(x, z);
+            let c;
+            if (coastBlend > 0.15 && h > WATER_SURFACE_Y - 4) {
+                if (h < WATER_SURFACE_Y + 1) {
+                    const t = Math.max(0, (h - (WATER_SURFACE_Y - 4)) / 5);
+                    c = cShallow.clone().lerp(cSand, t * 0.5).lerp(cSandLight, Math.max(0, t - 0.5) * 2);
+                } else if (h < WATER_SURFACE_Y + 6) {
+                    const t = Math.max(0, Math.min(1, (h - (WATER_SURFACE_Y + 1)) / 5));
+                    c = cSandLight.clone().lerp(cSand, t);
+                } else {
+                    const t = Math.max(0, Math.min(1, (h - (WATER_SURFACE_Y + 6)) / 12));
+                    c = cSand.clone().lerp(cLand, t).lerp(cLandDark, Math.max(0, t - 0.6) / 0.4);
+                }
+            } else {
+                const t = Math.max(0, Math.min(1, (h - REEF_FLOOR + 8) / 58)) * 0.65 + 0.2;
+                c = cDeep.clone().lerp(cShallow, Math.min(1, t));
+            }
             colors.push(c.r, c.g, c.b);
         }
         geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
@@ -738,95 +829,132 @@
         ground.receiveShadow = true;
         scene.add(ground);
 
-        // --- Water Surface Detail ---
+        // --- Water Surface (aligned with demo_ref1.html) ---
+        // Offsets break alignment of wave pattern with grid, avoiding visible seam lines
+        const WAVE_OX = 33.7, WAVE_OZ = 41.1;
         function getSurfaceWave(x, z, time) {
-            // Multi-frequency surface waves (inspired by demo_ref/other demo refs/1.html)
-            const base = Math.sin(x * 0.03 + time * 2.4) * 1.7
-                + Math.cos(z * 0.04 + time * 1.8) * 1.1
-                + Math.sin((x + z) * 0.1 + time * 3.8) * 0.45;
-            const swell = Math.sin(x * 0.012 + z * 0.009 + time * 0.9) * 0.6;
-            const micro = Math.sin((x * 0.055 - z * 0.045) + time * 1.9) * 0.18;
-            const wn = simplex.noise3D(x * 0.004, z * 0.004, time * 0.2) * 0.25;
-            return base + swell + micro + wn;
+            const u = x + WAVE_OX, v = z + WAVE_OZ;
+            return Math.sin(u * 0.03 + time * 2.4) * 2.9
+                + Math.cos(v * 0.04 + time * 1.8) * 1.9
+                + Math.sin((u + v) * 0.1 + time * 3.8) * 0.75;
         }
 
-        const waterGeo = new THREE.PlaneGeometry(MAP_SIZE * 1.04, MAP_SIZE * 1.04, 240, 240);
+        // Plane much larger than map so no visible wave boundary; more segments keep resolution
+        const WATER_PLANE_SIZE = MAP_SIZE;
+        const WATER_SEGMENTS = 180;
+        const waterGeo = new THREE.PlaneGeometry(WATER_PLANE_SIZE, WATER_PLANE_SIZE, WATER_SEGMENTS, WATER_SEGMENTS);
         waterGeo.rotateX(-Math.PI / 2);
         const waterPos = waterGeo.attributes.position;
         const waterBase = Float32Array.from(waterPos.array);
         for (let i = 0; i < waterPos.count; i++) {
             const x = waterPos.getX(i);
             const z = waterPos.getZ(i);
-            waterPos.setY(i, WATER_SURFACE_Y + getSurfaceWave(x, z, 0));
+            waterPos.setY(i, getSurfaceWave(x, z, 0));
         }
+        waterGeo.computeVertexNormals();
+        const waterMatTop = new THREE.Color(0x0a3a4a);
+        const waterMatBottom = new THREE.Color(0x6ec5e0);
+        const sunDir = new THREE.Vector3(110, 300, 70).normalize();
         const waterSurface = new THREE.Mesh(
             waterGeo,
-            new THREE.MeshPhongMaterial({
-                color: 0x0a3a4a,
-                specular: 0x55ccff,
-                shininess: 300,
+            new THREE.ShaderMaterial({
+                uniforms: {
+                    colorTop: { value: waterMatTop },
+                    colorBottom: { value: waterMatBottom },
+                    opacityTop: { value: 0.75 },
+                    opacityBottom: { value: 0.88 },
+                    sunDirection: { value: sunDir },
+                    sunGlint: { value: 0.42 }
+                },
+                vertexShader: `
+                    varying vec3 vWorldPosition;
+                    varying vec3 vWorldNormal;
+                    void main() {
+                        vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+                        vWorldNormal = (modelMatrix * vec4(normal, 0.0)).xyz;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 colorTop;
+                    uniform vec3 colorBottom;
+                    uniform float opacityTop;
+                    uniform float opacityBottom;
+                    uniform vec3 sunDirection;
+                    uniform float sunGlint;
+                    varying vec3 vWorldPosition;
+                    varying vec3 vWorldNormal;
+                    void main() {
+                        if (gl_FrontFacing) {
+                            vec3 N = normalize(vWorldNormal);
+                            vec3 V = normalize(cameraPosition - vWorldPosition);
+                            vec3 R = reflect(-normalize(sunDirection), N);
+                            float spec = pow(max(0.0, dot(R, V)), 48.0) * sunGlint;
+                            vec3 col = colorTop + vec3(spec, spec * 0.95, spec);
+                            gl_FragColor = vec4(col, opacityTop);
+                        } else {
+                            gl_FragColor = vec4(colorBottom, opacityBottom);
+                        }
+                    }
+                `,
                 transparent: true,
-                opacity: 0.78,
                 side: THREE.DoubleSide,
                 depthWrite: false
             })
         );
+        waterSurface.position.y = WATER_SURFACE_Y;
         waterSurface.receiveShadow = false;
         scene.add(waterSurface);
 
-        // --- Reef Obstacles ---
-        const boxGeo = new THREE.CylinderGeometry(0.8, 1.6, 1.0, 8);
-        boxGeo.translate(0, 0.5, 0);
-        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x5f6366, roughness: 0.95, flatShading: true });
-        const buildingsMesh = new THREE.InstancedMesh(boxGeo, buildingMat, 2400);
-        buildingsMesh.castShadow = true;
-        buildingsMesh.receiveShadow = true;
+        // --- Underwater light rays: fullscreen quad in front of camera, gradient (bright top = light from above) ---
+        const lightRaysGeo = new THREE.PlaneGeometry(1, 1);
+        const lightRaysMesh = new THREE.Mesh(
+            lightRaysGeo,
+            new THREE.ShaderMaterial({
+                uniforms: {
+                    surfaceY: { value: WATER_SURFACE_Y },
+                    cameraY: { value: 0.0 },
+                    rayTop: { value: new THREE.Color(0xb8eeff) },
+                    rayBottom: { value: new THREE.Color(0x06293b) }
+                },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform float surfaceY;
+                    uniform float cameraY;
+                    uniform vec3 rayTop;
+                    uniform vec3 rayBottom;
+                    varying vec2 vUv;
+                    void main() {
+                        float t = vUv.y;
+                        vec3 col = mix(rayBottom, rayTop, t * t);
+                        float alpha = 0.0;
+                        if (cameraY < surfaceY) {
+                            alpha = t * 0.11;
+                        }
+                        gl_FragColor = vec4(col, alpha);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+                side: THREE.FrontSide
+            })
+        );
+        lightRaysMesh.position.set(0, 0, -28);
+        lightRaysMesh.rotation.y = Math.PI;
+        lightRaysMesh.scale.set(60, 60, 1);
+        camera.add(lightRaysMesh);
+
         const dummy = new THREE.Object3D();
         worldState.buildingColliders = [];
 
-        const reefSources = Array.isArray(worldState.mountainBuildings) && worldState.mountainBuildings.length > 0
-            ? worldState.mountainBuildings
-            : [];
-        if (reefSources.length === 0) {
-            worldState.cityBuildings = [];
-            worldState.mountainBuildings = [];
-            worldState.cabinPositions = [];
-            let attempts = 0;
-            while (worldState.mountainBuildings.length < 1300 && attempts < 42000) {
-                attempts++;
-                const x = (random() - 0.5) * 1500;
-                const z = (random() - 0.5) * 1500;
-                const y = getTerrainHeight(x, z);
-                if (y < REEF_FLOOR - 12 || y > 48) continue;
-                const clusterBoost = Math.max(0, Math.sin(x * 0.006) * Math.cos(z * 0.004));
-                const radius = 2.2 + random() * 6.2 + clusterBoost * 6;
-                const height = 3 + random() * 18 + clusterBoost * 10;
-                const reef = { x, z, halfWidth: radius, halfDepth: radius, baseHeight: y - 0.5, height: y + height };
-                worldState.mountainBuildings.push(reef);
-                worldState.cabinPositions.push({ x, z, r: radius + 3 });
-            }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(worldState));
-        }
-
-        let bIdx = 0;
-        worldState.mountainBuildings.forEach(b => {
-            if (bIdx >= buildingsMesh.count) return;
-            const radiusX = Math.max(1.2, b.halfWidth || 2.2);
-            const radiusZ = Math.max(1.2, b.halfDepth || radiusX);
-            const top = isFinite(b.height) ? b.height : getTerrainHeight(b.x, b.z) + 6;
-            const base = isFinite(b.baseHeight) ? b.baseHeight : getTerrainHeight(b.x, b.z) - 0.5;
-            const totalH = Math.max(2, top - base);
-            dummy.position.set(b.x, base, b.z);
-            dummy.rotation.set(0, random() * Math.PI, 0);
-            dummy.scale.set(radiusX * 1.1, totalH, radiusZ * 1.1);
-            dummy.updateMatrix();
-            buildingsMesh.setMatrixAt(bIdx++, dummy.matrix);
-            worldState.buildingColliders.push({ x: b.x, z: b.z, halfWidth: radiusX, halfDepth: radiusZ, height: base + totalH, baseHeight: base });
-        });
-        buildingsMesh.count = bIdx;
-        scene.add(buildingsMesh);
-
         // --- Seagrass ---
+        // Distributed over most of the seabed, but kept out of the exposed beach/land corner.
         const grassGeo = new THREE.CylinderGeometry(0.15, 0.42, 4.2, 6);
         grassGeo.translate(0, 2.1, 0);
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x2fa36f, roughness: 0.95, flatShading: true });
@@ -838,8 +966,13 @@
             attempts++;
             const x = (random() - 0.5) * 1700;
             const z = (random() - 0.5) * 1700;
-            const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 8 || h > 34) continue;
+            const h = getSmoothedTerrainHeight(x, z);
+            if (getCoastBlend(x, z) > 0.22) {
+                if (h >= BEACH_LAND_H) continue;
+                if (random() > Math.max(0, (BEACH_LAND_H - h) / 14)) continue;
+            }
+            if (h < REEF_FLOOR - 20 || h > 34) continue;
+            if (h < REEF_FLOOR - 8 && random() > (h - (REEF_FLOOR - 20)) / 12) continue;
             const patch = 0.6 + 0.5 * (Math.sin((x + 240) * 0.008) * Math.cos((z - 80) * 0.006) + 1);
             if (random() > Math.min(1.0, patch)) continue;
             dummy.position.set(x, h, z);
@@ -852,30 +985,48 @@
         grassMesh.count = gCount;
         scene.add(grassMesh);
 
-        // --- Coral ---
+        // --- Coral & stones (rocky outcrops and mixed coral heads) ---
         const coralGeo = new THREE.DodecahedronGeometry(1.2, 0);
         const coralMat = new THREE.MeshStandardMaterial({ color: 0xbf7a5d, roughness: 0.82, flatShading: true });
-        const coralMesh = new THREE.InstancedMesh(coralGeo, coralMat, 2400);
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x5f6366, roughness: 0.95, flatShading: true });
+        const coralMesh = new THREE.InstancedMesh(coralGeo, coralMat, 2000);
+        const stoneMesh = new THREE.InstancedMesh(coralGeo.clone(), stoneMat, 1000);
+        stoneMesh.castShadow = true;
+        stoneMesh.receiveShadow = true;
+        coralMesh.castShadow = true;
+        coralMesh.receiveShadow = true;
         let cCount = 0;
+        let sCount = 0;
         attempts = 0;
-        while (cCount < 1800 && attempts < 50000) {
+        while ((cCount + sCount) < 1800 && attempts < 50000) {
             attempts++;
             const x = (random() - 0.5) * 1680;
             const z = (random() - 0.5) * 1680;
             const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 6 || h > 34) continue;
-            dummy.position.set(x, h + 0.6, z);
+            if (getCoastBlend(x, z) > 0.22) {
+                if (h >= BEACH_LAND_H) continue;
+                if (random() > Math.max(0, (BEACH_LAND_H - h) / 14)) continue;
+            }
+            if (h < REEF_FLOOR - 15 || h > 34) continue;
+            if (h < REEF_FLOOR - 6 && random() > (h - (REEF_FLOOR - 15)) / 9) continue;
             const patch = 0.6 + 0.5 * (Math.cos((x - 380) * 0.006) * Math.sin((z + 220) * 0.008) + 1);
-            const s = 0.9 + random() * 2.4 + patch * 1.2;
+            const s = 0.9 + random() * 3.4 + patch * 1.6;
+            dummy.position.set(x, h + 0.5, z);
             dummy.scale.set(s, s * (0.7 + random() * 0.4), s);
             dummy.rotation.set(random(), random() * Math.PI, random());
             dummy.updateMatrix();
-            coralMesh.setMatrixAt(cCount++, dummy.matrix);
+            if (random() < 0.35 && sCount < 1000) {
+                stoneMesh.setMatrixAt(sCount++, dummy.matrix);
+            } else if (cCount < 2000) {
+                coralMesh.setMatrixAt(cCount++, dummy.matrix);
+            }
         }
         coralMesh.count = cCount;
+        stoneMesh.count = sCount;
         scene.add(coralMesh);
+        scene.add(stoneMesh);
 
-        // --- Shells ---
+        // --- Shells (shallow and mid-depth sandy areas) ---
         const shellGeo = new THREE.SphereGeometry(0.8, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.62);
         shellGeo.translate(0, 0.1, 0);
         const shellMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c4, roughness: 0.92, metalness: 0.05, flatShading: true });
@@ -888,8 +1039,10 @@
             attempts++;
             const x = (random() - 0.5) * 1700;
             const z = (random() - 0.5) * 1700;
-            const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 12 || h > 55) continue;
+            if (getCoastBlend(x, z) > 0.22) continue;
+            const h = getSmoothedTerrainHeight(x, z);
+            if (h < REEF_FLOOR - 25 || h > 55) continue;
+            if (h < REEF_FLOOR - 12 && random() > (h - (REEF_FLOOR - 25)) / 13) continue;
             const sand = 0.5 + 0.5 * simplex.noise2D(x * 0.004, z * 0.004);
             if (random() > Math.min(1.0, sand * 0.7)) continue;
             dummy.position.set(x, h + 0.12, z);
@@ -914,93 +1067,433 @@
             pVelocities.push(0.45 + Math.random() * 1.6);
         }
         particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
-        const windParticles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0x8ce9ff, size: 0.9, transparent: true, opacity: 0.5, sizeAttenuation: true }));
+        const windParticles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0x8ce9ff, size: 1.2, transparent: true, opacity: 0.5, sizeAttenuation: true }));
         scene.add(windParticles);
+
+        // --- Fish schools ---
+        // Low-poly fish silhouette (body + tail + dorsal fin) so each instance reads as a fish when seen in motion.
+        function createFishGeometry() {
+            const g = new THREE.BufferGeometry();
+            // local space: +Z forward, +Y up, +X right
+            const v = [
+                // body core
+                0, 0, 0.62,     // 0 nose
+                0, 0, -0.32,    // 1 tail base
+                0, 0.13, 0.12,  // 2 top
+                0, -0.13, 0.12, // 3 bottom
+                -0.10, 0, 0.10, // 4 left
+                0.10, 0, 0.10,  // 5 right
+                // tail fin
+                -0.18, 0, -0.62, // 6 tail left tip
+                0.18, 0, -0.62,  // 7 tail right tip
+                0, 0.14, -0.54,  // 8 tail top tip
+                0, -0.14, -0.54, // 9 tail bottom tip
+                // dorsal fin tip
+                0, 0.24, -0.02   // 10 dorsal tip
+            ];
+            const idx = [
+                // nose -> mid
+                0, 2, 5,  0, 5, 3,  0, 3, 4,  0, 4, 2,
+                // mid -> tail base
+                1, 5, 2,  1, 3, 5,  1, 4, 3,  1, 2, 4,
+                // tail fin (cross)
+                1, 6, 8,  1, 8, 7,  1, 7, 9,  1, 9, 6,
+                // dorsal fin
+                2, 10, 5,  2, 4, 10
+            ];
+            g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+            g.setIndex(idx);
+            g.computeVertexNormals();
+            g.computeBoundingSphere();
+            return g;
+        }
+
+        const fishCount = 880;
+        const fishBodyGeo = createFishGeometry();
+        const fishMat = new THREE.MeshStandardMaterial({
+            color: 0xffc35a,
+            roughness: 0.4,
+            metalness: 0.18,
+            emissive: 0x8a4a10,
+            emissiveIntensity: 0.22
+        });
+        const fishMesh = new THREE.InstancedMesh(fishBodyGeo, fishMat, fishCount);
+        fishMesh.castShadow = false;
+        fishMesh.receiveShadow = false;
+        scene.add(fishMesh);
+
+        const fishSchools = []; // school centers (world space), one per school
+        const fishData = [];    // per-fish offsets/state; each fish references a school index
+        const numSchools = 8;
+        const fishPerSchool = Math.floor(fishCount / numSchools);
+        for (let s = 0; s < numSchools; s++) {
+            let centerX = (Math.random() - 0.5) * (MAP_SIZE * 0.5);
+            let centerZ = (Math.random() - 0.5) * (MAP_SIZE * 0.5);
+            if (getCoastBlend(centerX, centerZ) > 0.55) { centerX *= 0.2; centerZ *= 0.2; }
+            const heading = Math.random() * Math.PI * 2;
+            const speed = 3.2 + Math.random() * 4.4;
+            const baseY = WATER_SURFACE_Y - (24 + Math.random() * 90);
+            fishSchools.push({ x: centerX, y: baseY, z: centerZ, heading, speed, phase: Math.random() * Math.PI * 2 });
+
+            for (let i = 0; i < fishPerSchool && fishData.length < fishCount; i++) {
+                // tighter school: offsets in local space (X/Z spread) with mild vertical spread
+                const ox = (Math.random() - 0.5) * (8 + Math.random() * 10);
+                const oz = (Math.random() - 0.5) * (10 + Math.random() * 12);
+                const oy = (Math.random() - 0.5) * 10;
+                const sc = 0.95 + Math.random() * 0.9;
+                fishData.push({
+                    school: s,
+                    x: centerX,
+                    y: baseY,
+                    z: centerZ,
+                    rotY: heading + (Math.random() - 0.5) * 0.35,
+                    speed: speed * (0.9 + Math.random() * 0.25),
+                    phase: Math.random() * Math.PI * 2,
+                    scale: sc,
+                    ox, oy, oz
+                });
+            }
+        }
+        while (fishData.length < fishCount) {
+            const s = Math.floor(Math.random() * fishSchools.length);
+            const sch = fishSchools[s];
+            fishData.push({
+                school: s,
+                x: sch.x,
+                y: sch.y,
+                z: sch.z,
+                rotY: sch.heading,
+                speed: sch.speed * (0.9 + Math.random() * 0.25),
+                phase: Math.random() * Math.PI * 2,
+                scale: 0.95 + Math.random() * 0.9,
+                ox: (Math.random() - 0.5) * 14,
+                oy: (Math.random() - 0.5) * 10,
+                oz: (Math.random() - 0.5) * 18
+            });
+        }
+
+        const fishDummy = new THREE.Object3D();
+        for (let i = 0; i < fishData.length; i++) {
+            const f = fishData[i];
+            fishDummy.position.set(f.x, f.y, f.z);
+            fishDummy.rotation.set(0, f.rotY, 0);
+            fishDummy.scale.set(f.scale * 1.05, f.scale * 0.72, f.scale * 1.25);
+            fishDummy.updateMatrix();
+            fishMesh.setMatrixAt(i, fishDummy.matrix);
+        }
+        fishMesh.count = fishData.length;
+        fishMesh.instanceMatrix.needsUpdate = true;
 
         // --- UUV ---
         const droneGroup = new THREE.Group();
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x223f50, roughness: 0.52, metalness: 0.22 });
-        const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), bodyMat);
-        hull.rotation.x = Math.PI / 2;
-        droneGroup.add(hull);
-        const nose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), bodyMat);
-        nose.position.z = -4.9;
-        droneGroup.add(nose);
-        const tail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), bodyMat);
-        tail.rotation.x = -Math.PI / 2;
-        tail.position.z = 5.35;
-        droneGroup.add(tail);
-        const centerBand = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
-        centerBand.rotation.x = Math.PI / 2;
-        centerBand.position.z = -0.3;
-        droneGroup.add(centerBand);
 
-        const finMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
-        const finTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), finMat); finTop.position.set(0, 1.16, 2.45); droneGroup.add(finTop);
-        const finBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), finMat); finBottom.position.set(0, -1.02, 2.75); droneGroup.add(finBottom);
-        const finLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finLeft.position.set(-1.12, 0.02, 2.55); finLeft.rotation.z = 0.2; droneGroup.add(finLeft);
-        const finRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finRight.position.set(1.12, 0.02, 2.55); finRight.rotation.z = -0.2; droneGroup.add(finRight);
+        // ========== Original device variant (kept for reference, not active) ==========
+        // const bodyMat = new THREE.MeshStandardMaterial({ color: 0x223f50, roughness: 0.52, metalness: 0.22 });
+        // const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), bodyMat);
+        // hull.rotation.x = Math.PI / 2;
+        // droneGroup.add(hull);
+        // const nose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), bodyMat);
+        // nose.position.z = -4.9;
+        // droneGroup.add(nose);
+        // const tail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), bodyMat);
+        // tail.rotation.x = -Math.PI / 2;
+        // tail.position.z = 5.35;
+        // droneGroup.add(tail);
+        // const centerBand = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
+        // centerBand.rotation.x = Math.PI / 2;
+        // centerBand.position.z = -0.3;
+        // droneGroup.add(centerBand);
+        // const finMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
+        // const finTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), finMat); finTop.position.set(0, 1.16, 2.45); droneGroup.add(finTop);
+        // const finBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), finMat); finBottom.position.set(0, -1.02, 2.75); droneGroup.add(finBottom);
+        // const finLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finLeft.position.set(-1.12, 0.02, 2.55); finLeft.rotation.z = 0.2; droneGroup.add(finLeft);
+        // const finRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finRight.position.set(1.12, 0.02, 2.55); finRight.rotation.z = -0.2; droneGroup.add(finRight);
+        // const propGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
+        // const propMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
+        // const ductMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
+        // const strutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
+        // const props = [];
+        // const podPositions = [
+        //     { x: -1.55, y: 0.95, z: 3.15 },
+        //     { x: 1.55, y: 0.95, z: 3.15 },
+        //     { x: -1.55, y: -0.95, z: 3.15 },
+        //     { x: 1.55, y: -0.95, z: 3.15 }
+        // ];
+        // podPositions.forEach(pos => {
+        //     const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), strutMat);
+        //     strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
+        //     strut.rotation.z = Math.atan2(pos.x, 1.8);
+        //     droneGroup.add(strut);
+        //     const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), ductMat);
+        //     duct.position.set(pos.x, pos.y, pos.z);
+        //     duct.rotation.x = Math.PI / 2;
+        //     droneGroup.add(duct);
+        //     const p = new THREE.Mesh(propGeo, propMat);
+        //     p.position.set(pos.x, pos.y, pos.z);
+        //     p.rotation.x = Math.PI / 2;
+        //     droneGroup.add(p);
+        //     props.push(p);
+        // });
 
-        const propGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
-        const propMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
-        const ductMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
-        const strutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
+        // ========== Active device: open-frame cubic aluminum UUV with detailed internals ==========
         const props = [];
-        const podPositions = [
-            { x: -1.55, y: 0.95, z: 3.15 },
-            { x: 1.55, y: 0.95, z: 3.15 },
-            { x: -1.55, y: -0.95, z: 3.15 },
-            { x: 1.55, y: -0.95, z: 3.15 }
+        const CUBE = 2.9;
+        const frameSilverMat = new THREE.MeshStandardMaterial({ color: 0xb8b8c0, roughness: 0.35, metalness: 0.7 });
+        const jointMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa2, roughness: 0.3, metalness: 0.75 });
+        const edgeThick = 0.115;
+        const jointSize = 0.16;
+        function addEdgeBar(x, y, z, axis, len) {
+            const geo = new THREE.BoxGeometry(
+                axis === 'x' ? len : edgeThick,
+                axis === 'y' ? len : edgeThick,
+                axis === 'z' ? len : edgeThick
+            );
+            const bar = new THREE.Mesh(geo, frameSilverMat);
+            bar.position.set(x, y, z);
+            droneGroup.add(bar);
+        }
+        const s = CUBE / 2;
+        addEdgeBar(-s, -s, 0, 'z', CUBE); addEdgeBar(-s, s, 0, 'z', CUBE);
+        addEdgeBar(s, -s, 0, 'z', CUBE); addEdgeBar(s, s, 0, 'z', CUBE);
+        addEdgeBar(-s, 0, -s, 'y', CUBE); addEdgeBar(-s, 0, s, 'y', CUBE);
+        addEdgeBar(s, 0, -s, 'y', CUBE); addEdgeBar(s, 0, s, 'y', CUBE);
+        addEdgeBar(0, -s, -s, 'x', CUBE); addEdgeBar(0, -s, s, 'x', CUBE);
+        addEdgeBar(0, s, -s, 'x', CUBE); addEdgeBar(0, s, s, 'x', CUBE);
+
+        [[-s,-s,-s],[-s,-s,s],[-s,s,-s],[-s,s,s],[s,-s,-s],[s,-s,s],[s,s,-s],[s,s,s]].forEach(([x,y,z]) => {
+            const joint = new THREE.Mesh(new THREE.BoxGeometry(jointSize, jointSize, jointSize), jointMat);
+            joint.position.set(x, y, z);
+            droneGroup.add(joint);
+        });
+        const rivetMat = new THREE.MeshStandardMaterial({ color: 0x707078, roughness: 0.4, metalness: 0.8 });
+        const rivetR = 0.058;
+        const cornerOffsets = [
+            [-s,-s,-s, -0.06, 0, -0.04], [-s,-s,s, -0.06, 0, 0.04], [-s,s,-s, -0.06, 0, -0.04], [-s,s,s, -0.06, 0, 0.04],
+            [s,-s,-s, 0.06, 0, -0.04], [s,-s,s, 0.06, 0, 0.04], [s,s,-s, 0.06, 0, -0.04], [s,s,s, 0.06, 0, 0.04]
         ];
-        podPositions.forEach(pos => {
-            const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), strutMat);
-            strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
-            strut.rotation.z = Math.atan2(pos.x, 1.8);
-            droneGroup.add(strut);
+        cornerOffsets.forEach(([cx, cy, cz, ox, oy, oz], i) => {
+            const r = new THREE.Mesh(new THREE.CylinderGeometry(rivetR, rivetR, edgeThick * 1.5, 14), rivetMat.clone());
+            r.position.set(cx + ox, cy + oy, cz + oz);
+            r.rotation.x = Math.PI / 2;
+            droneGroup.add(r);
+        });
+        const statusLedMat = new THREE.MeshStandardMaterial({
+            color: 0x22aa22,
+            emissive: 0x00cc44,
+            emissiveIntensity: 0.8,
+            roughness: 0.9,
+            metalness: 0
+        });
+        const statusLed = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 14), statusLedMat);
+        statusLed.position.set(s - 0.04, s - 0.04, -s - 0.04);
+        droneGroup.add(statusLed);
+        droneGroup.userData.statusLed = statusLed;
 
-            const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), ductMat);
-            duct.position.set(pos.x, pos.y, pos.z);
-            duct.rotation.x = Math.PI / 2;
-            droneGroup.add(duct);
+        const braceMat = new THREE.MeshStandardMaterial({ color: 0xa8a8b0, roughness: 0.4, metalness: 0.65 });
+        const braceThick = 0.04;
+        [[-s,-s,-s,s,s,s], [-s,s,-s,s,-s,s], [s,-s,-s,-s,s,s]].forEach(([x1,y1,z1,x2,y2,z2]) => {
+            const cx = (x1+x2)/2, cy = (y1+y2)/2, cz = (z1+z2)/2;
+            const len = Math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2);
+            const b = new THREE.Mesh(new THREE.BoxGeometry(braceThick, braceThick, len), braceMat);
+            b.position.set(cx, cy, cz);
+            b.lookAt(x1, y1, z1);
+            droneGroup.add(b);
+        });
 
+        const hullR = 0.42, hullLen = CUBE * 0.88;
+        const hullBlueMat = new THREE.MeshStandardMaterial({
+            color: 0x2560a0,
+            roughness: 0.25,
+            metalness: 0.15,
+            emissive: 0x4080c0,
+            emissiveIntensity: 0
+        });
+        const pressureHull = new THREE.Mesh(new THREE.CylinderGeometry(hullR, hullR, hullLen, 32), hullBlueMat);
+        pressureHull.rotation.x = Math.PI / 2;
+        droneGroup.add(pressureHull);
+        droneGroup.userData.hullBlueMat = hullBlueMat;
+        droneGroup.userData.hullEmissiveRest = new THREE.Color(0x4080c0);
+        droneGroup.userData.hullEmissiveMove = new THREE.Color(0x90e8ff);
+        const hullSilverMat = new THREE.MeshStandardMaterial({ color: 0xd0d0d8, roughness: 0.28, metalness: 0.78 });
+        for (let i = -1; i <= 1; i++) {
+            const ring = new THREE.Mesh(new THREE.TorusGeometry(hullR + 0.058, 0.042, 12, 32), hullSilverMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.z = i * hullLen * 0.36;
+            droneGroup.add(ring);
+        }
+        for (let i = 0; i < 2; i++) {
+            const thin = new THREE.Mesh(new THREE.TorusGeometry(hullR + 0.048, 0.032, 10, 28), hullSilverMat);
+            thin.rotation.x = Math.PI / 2;
+            thin.position.z = (i - 0.5) * hullLen * 0.72;
+            droneGroup.add(thin);
+        }
+
+        const nameplateCanvas = document.createElement('canvas');
+        nameplateCanvas.width = 480;
+        nameplateCanvas.height = 160;
+        const npctx = nameplateCanvas.getContext('2d');
+        npctx.fillStyle = '#0d2d50';
+        npctx.fillRect(0, 0, 480, 160);
+        npctx.font = 'bold 88px Arial, sans-serif';
+        npctx.textAlign = 'center';
+        npctx.textBaseline = 'middle';
+        npctx.fillStyle = '#ffd54f';
+        npctx.fillText('OneOcean', 240, 80);
+        npctx.strokeStyle = '#ffffff';
+        npctx.lineWidth = 7;
+        npctx.strokeText('OneOcean', 240, 80);
+        const nameplateTex = new THREE.CanvasTexture(nameplateCanvas);
+        const nameplateMat = new THREE.MeshBasicMaterial({
+            map: nameplateTex,
+            side: THREE.DoubleSide,
+            depthTest: true,
+            depthWrite: true
+        });
+        const nameplate = new THREE.Mesh(new THREE.PlaneGeometry(1.95, 0.65), nameplateMat);
+        nameplate.position.set(0, 0, s + 0.38);
+        droneGroup.add(nameplate);
+
+        const panelWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f5, roughness: 0.6 });
+        const panelR = 0.58;
+        const frontPanel = new THREE.Mesh(new THREE.CylinderGeometry(panelR, panelR, 0.03, 32), panelWhiteMat);
+        frontPanel.rotation.x = Math.PI / 2;
+        frontPanel.position.z = -s - 0.02;
+        droneGroup.add(frontPanel);
+        const panelRim = new THREE.Mesh(new THREE.TorusGeometry(panelR + 0.03, 0.025, 8, 32), frameSilverMat);
+        panelRim.rotation.x = Math.PI / 2;
+        panelRim.position.z = -s - 0.01;
+        droneGroup.add(panelRim);
+        const holeMat = new THREE.MeshBasicMaterial({ color: 0x1a1a22 });
+        const holeRadius = 0.038;
+        for (let row = 0; row < 6; row++) {
+            const n = row % 2 === 0 ? 7 : 6;
+            const startX = -((n - 1) * 0.14) / 2;
+            const y = (row - 2.5) * 0.16;
+            for (let i = 0; i < n; i++) {
+                const hole = new THREE.Mesh(new THREE.CylinderGeometry(holeRadius, holeRadius, 0.04, 12), holeMat);
+                hole.rotation.x = Math.PI / 2;
+                hole.position.set(startX + i * 0.14, y, -s - 0.015);
+                droneGroup.add(hole);
+            }
+        }
+
+        const thrusterBlackMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.5, metalness: 0.3 });
+        const bracketMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.55, metalness: 0.35 });
+        const propMat = new THREE.MeshBasicMaterial({ color: 0x0f0f0f });
+        const thrusterRadius = 0.2, thrusterLen = 0.38;
+        const propGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.03, 12);
+        const horizontalThrusterPositions = [
+            { x: -s - 0.08, y: s - 0.15, z: s - 0.2 }, { x: s + 0.08, y: s - 0.15, z: s - 0.2 },
+            { x: -s - 0.08, y: -s + 0.15, z: s - 0.2 }, { x: s + 0.08, y: -s + 0.15, z: s - 0.2 }
+        ];
+        horizontalThrusterPositions.forEach(pos => {
+            const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.25), bracketMat);
+            bracket.position.set(pos.x, pos.y, pos.z - 0.12);
+            bracket.rotation.x = 0.1;
+            droneGroup.add(bracket);
+            const housing = new THREE.Mesh(new THREE.CylinderGeometry(thrusterRadius, thrusterRadius * 0.95, thrusterLen, 16), thrusterBlackMat);
+            housing.position.set(pos.x, pos.y, pos.z);
+            housing.rotation.x = Math.PI / 2;
+            droneGroup.add(housing);
+            const guard = new THREE.Mesh(new THREE.TorusGeometry(thrusterRadius + 0.04, 0.02, 6, 16), thrusterBlackMat);
+            guard.rotation.x = Math.PI / 2;
+            guard.position.set(pos.x + (pos.x > 0 ? 0.22 : -0.22), pos.y, pos.z);
+            droneGroup.add(guard);
             const p = new THREE.Mesh(propGeo, propMat);
-            p.position.set(pos.x, pos.y, pos.z);
+            p.position.set(pos.x + (pos.x > 0 ? 0.2 : -0.2), pos.y, pos.z);
             p.rotation.x = Math.PI / 2;
             droneGroup.add(p);
             props.push(p);
         });
+        const verticalThrusterPositions = [
+            { x: -s * 0.55, y: -s - 0.22, z: 0 }, { x: s * 0.55, y: -s - 0.22, z: 0 }
+        ];
+        verticalThrusterPositions.forEach(pos => {
+            const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.1), bracketMat);
+            bracket.position.set(pos.x, pos.y - 0.15, pos.z);
+            droneGroup.add(bracket);
+            const housing = new THREE.Mesh(new THREE.CylinderGeometry(thrusterRadius * 0.85, thrusterRadius * 0.8, thrusterLen, 16), thrusterBlackMat);
+            housing.position.set(pos.x, pos.y, pos.z);
+            droneGroup.add(housing);
+            const guard = new THREE.Mesh(new THREE.TorusGeometry(thrusterRadius * 0.85 + 0.03, 0.018, 6, 16), thrusterBlackMat);
+            guard.position.set(pos.x, pos.y - 0.2, pos.z);
+            droneGroup.add(guard);
+            const p = new THREE.Mesh(propGeo, propMat);
+            p.position.set(pos.x, pos.y - 0.2, pos.z);
+            droneGroup.add(p);
+            props.push(p);
+        });
+
+        const baseY = -s - 0.2;
+        const baseBarW = CUBE * 0.78, baseBarD = CUBE * 0.5;
+        addEdgeBar(0, baseY, -s + baseBarD / 2, 'x', baseBarW);
+        addEdgeBar(0, baseY, s - baseBarD / 2, 'x', baseBarW);
+        addEdgeBar(-baseBarW / 2, baseY, 0, 'z', baseBarD);
+        addEdgeBar(baseBarW / 2, baseY, 0, 'z', baseBarD);
+        const lugMat = new THREE.MeshStandardMaterial({ color: 0xa0a0a8, roughness: 0.4, metalness: 0.6 });
+        [-0.35, 0.35].forEach(ox => {
+            const lug = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 0.18), lugMat);
+            lug.position.set(ox, baseY - 0.05, -s + 0.2);
+            droneGroup.add(lug);
+        });
+
+        const sensorMat = new THREE.MeshStandardMaterial({ color: 0x1c1c20, roughness: 0.6, metalness: 0.2 });
+        const sensor = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.1, 12), sensorMat);
+        sensor.position.set(0, s + 0.08, 0);
+        droneGroup.add(sensor);
+        const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.25, 8), jointMat);
+        antenna.position.set(s * 0.5, s + 0.2, -s * 0.5);
+        antenna.rotation.z = -0.15;
+        droneGroup.add(antenna);
 
         const trailFrontMat = new THREE.MeshBasicMaterial({ color: 0x7ddaff, transparent: true, opacity: 0.0, depthWrite: false });
         const trailTailMat = new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.0, depthWrite: false });
-        const noseTrail = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.2, 16), trailFrontMat);
-        noseTrail.position.set(0, 0, -6.1);
+        const trailGlowMat = (color) => new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.0,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+        const noseTrail = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 24), trailFrontMat);
+        noseTrail.position.set(0, 0, -s - 0.5);
         noseTrail.rotation.x = Math.PI / 2;
         droneGroup.add(noseTrail);
-        const tailTrail = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.8, 16), trailTailMat);
-        tailTrail.position.set(0, 0, 6.8);
+        const noseTrailGlow = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.6, 24), trailGlowMat(0x5dc8ff));
+        noseTrailGlow.position.set(0, 0, -s - 0.6);
+        noseTrailGlow.rotation.x = Math.PI / 2;
+        droneGroup.add(noseTrailGlow);
+        const tailTrail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.4, 24), trailTailMat);
+        tailTrail.position.set(0, 0, s + 0.5);
         tailTrail.rotation.x = -Math.PI / 2;
         droneGroup.add(tailTrail);
+        const tailTrailGlow = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.9, 24), trailGlowMat(0x6ed5ff));
+        tailTrailGlow.position.set(0, 0, s + 0.65);
+        tailTrailGlow.rotation.x = -Math.PI / 2;
+        droneGroup.add(tailTrailGlow);
 
         const frontLight = new THREE.SpotLight(0xb9f0ff, 1.45, 220, Math.PI / 7, 0.55, 1.6);
-        frontLight.position.set(0, 0.35, -4.7);
+        frontLight.position.set(0, 0.2, -s - 0.15);
         frontLight.target.position.set(0, 0.2, -34);
         frontLight.castShadow = false;
         droneGroup.add(frontLight);
         droneGroup.add(frontLight.target);
 
         const downLight = new THREE.SpotLight(0x8dd9ff, 1.1, 150, Math.PI / 5, 0.65, 1.5);
-        downLight.position.set(0, -0.45, -1.1);
-        downLight.target.position.set(0, -24, -1.1);
+        downLight.position.set(0, -s - 0.15, 0);
+        downLight.target.position.set(0, -24, 0);
         downLight.castShadow = false;
         droneGroup.add(downLight);
         droneGroup.add(downLight.target);
 
         droneGroup.userData.noseTrail = noseTrail;
+        droneGroup.userData.noseTrailGlow = noseTrailGlow;
         droneGroup.userData.tailTrail = tailTrail;
+        droneGroup.userData.tailTrailGlow = tailTrailGlow;
         droneGroup.userData.frontLight = frontLight;
         droneGroup.userData.downLight = downLight;
         droneGroup.scale.set(0.38, 0.38, 0.38);
-        droneGroup.position.set(0, 100, 0);
+        droneGroup.position.set(0, WATER_SURFACE_Y, 0);
         scene.add(droneGroup);
 
         // --- PID Controller Class ---
@@ -1365,6 +1858,11 @@
         const controlMode = 'SIMPLE';
         const droneDynamics = new DroneDynamics();
 
+        // SIMPLE mode battery: drain every 5s (0.05% base + 0.05% if moved in that period)
+        let simpleModeBattery = 100.0;
+        let drainAccumulatedTime = 0;
+        let hadMovementInLast5Sec = false;
+
         // --- Controls ---
         const keyMap = { 'KeyW':'w', 'KeyS':'s', 'KeyA':'a', 'KeyD':'d', 'ArrowUp':'ArrowUp', 'ArrowDown':'ArrowDown', 'ArrowLeft':'ArrowLeft', 'ArrowRight':'ArrowRight' };
         const keys = { w: false, s: false, a: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
@@ -1388,8 +1886,6 @@
         const fileInput = document.getElementById('file-input');
         const batVal = document.getElementById('battery-val');
         const batBar = document.getElementById('battery-bar');
-        const motorVal = document.getElementById('motor-val');
-        const attVal = document.getElementById('att-val');
         const fogDensityControl = document.getElementById('fog-density-control');
 
         function setViewMode(mode) {
@@ -1404,7 +1900,7 @@
         btnFPV.addEventListener('click', () => setViewMode('FPV'));
         
         // Fog Control
-        let fogUserDensity = scene.fog ? scene.fog.density : 0.0018;
+        let fogUserDensity = scene.fog ? scene.fog.density : 0;
         if (fogDensityControl) {
             fogUserDensity = parseFloat(fogDensityControl.value);
             fogDensityControl.value = String(fogUserDensity);
@@ -1505,17 +2001,19 @@
         // --- Pollution Targets & Labels ---
         const labelContainer = document.getElementById('labels-container');
         const userListEl = document.getElementById('user-list');
+        const fishListEl = document.getElementById('fish-list');
         const labels = [];
         const pollutionTargets = [];
         function createPollutionMarker(target) {
             const group = new THREE.Group();
+            const scale = 1.28;
 
             const barrelYellowMat = new THREE.MeshStandardMaterial({
                 color: 0xf3d24a,
-                roughness: 0.55,
-                metalness: 0.12,
-                emissive: 0x3a2c00,
-                emissiveIntensity: 0.08
+                roughness: 0.5,
+                metalness: 0.1,
+                emissive: 0xf3d24a,
+                emissiveIntensity: 0.35
             });
             const barrel = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 2.2, 18), barrelYellowMat);
             group.add(barrel);
@@ -1550,40 +2048,53 @@
             hazard.rotation.z = Math.PI / 6;
             group.add(hazard);
 
+            group.scale.setScalar(scale);
             group.position.copy(target.pos);
             scene.add(group);
             target.mesh = group;
         }
 
         const UNDERWATER_POLLUTION_COUNT = 6;
-        const SURFACE_POLLUTION_COUNT = 18;
-        const EXPECTED_POLLUTION_COUNT = UNDERWATER_POLLUTION_COUNT + SURFACE_POLLUTION_COUNT;
+        const POLLUTION_CLUSTER_COUNT = 2;
+        const POINTS_PER_CLUSTER = 9;
+        const CLUSTER_RADIUS_MIN = 8;
+        const CLUSTER_RADIUS_MAX = 35;
 
-        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length !== EXPECTED_POLLUTION_COUNT) {
+        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length !== UNDERWATER_POLLUTION_COUNT) {
             worldState.finalUsers = [];
             for (let i = 0; i < UNDERWATER_POLLUTION_COUNT; i++) {
                 const x = (random() - 0.5) * (MAP_SIZE * 0.8);
                 const z = (random() - 0.5) * (MAP_SIZE * 0.8);
                 worldState.finalUsers.push({ x, y: getTerrainHeight(x, z) + 1.1 + random() * 2.2, z, kind: 'POLLUTION', floating: false });
             }
-            for (let i = 0; i < SURFACE_POLLUTION_COUNT; i++) {
-                const x = (random() - 0.5) * (MAP_SIZE * 0.9);
-                const z = (random() - 0.5) * (MAP_SIZE * 0.9);
-                worldState.finalUsers.push({ x, y: WATER_SURFACE_Y, z, kind: 'POLLUTION', floating: true, phase: random() * Math.PI * 2 });
+        }
+        if (!isLoadedFromData || !Array.isArray(worldState.pollutionClusters) || worldState.pollutionClusters.length !== POLLUTION_CLUSTER_COUNT) {
+            worldState.pollutionClusters = [];
+            for (let c = 0; c < POLLUTION_CLUSTER_COUNT; c++) {
+                const centerX = (random() - 0.5) * (MAP_SIZE * 0.85);
+                const centerZ = (random() - 0.5) * (MAP_SIZE * 0.85);
+                const points = [];
+                for (let n = 0; n < POINTS_PER_CLUSTER; n++) {
+                    const r = CLUSTER_RADIUS_MIN + random() * (CLUSTER_RADIUS_MAX - CLUSTER_RADIUS_MIN);
+                    const theta = random() * Math.PI * 2;
+                    points.push({ dx: r * Math.cos(theta) + (random() - 0.5) * 6, dz: r * Math.sin(theta) + (random() - 0.5) * 6 });
+                }
+                worldState.pollutionClusters.push({ clusterId: c + 1, centerX, centerZ, points });
             }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(worldState));
         }
 
         const userDataElements = [];
+        const fishDistanceRows = [];
         worldState.finalUsers.forEach((p, i) => {
-            const floating = !!p.floating;
-            const id = floating ? `POLLUTION_SURFACE_${i + 1}` : `POLLUTION_${i + 1}`;
+            const id = `POLLUTION_${i + 1}`;
             const target = {
                 id,
                 kind: 'POLLUTION',
-                floating,
-                phase: p.phase || random() * Math.PI * 2,
-                pos: new THREE.Vector3(p.x, p.y, p.z)
+                floating: false,
+                phase: 0,
+                pos: new THREE.Vector3(p.x, p.y, p.z),
+                isCluster: false
             };
             createPollutionMarker(target);
             pollutionTargets.push(target);
@@ -1592,7 +2103,8 @@
             d.className = 'floating-label';
             d.innerText = id;
             labelContainer.appendChild(d);
-            labels.push({ id, pos: target.pos, el: d, target });
+            const labelPosAbove = target.pos.clone().add(new THREE.Vector3(0, 3.5, 0));
+            labels.push({ id, pos: labelPosAbove, el: d, target });
 
             const r = document.createElement('div');
             r.className = 'user-coord-row';
@@ -1602,6 +2114,112 @@
             userListEl.appendChild(r);
             userDataElements.push({ row: r, coordSpan, target });
         });
+        const LABEL_OFFSET_ABOVE = 3.5;
+        worldState.pollutionClusters.forEach((cluster) => {
+            const clusterId = cluster.clusterId;
+            const id = `Pollution Cluster ${clusterId}`;
+            const centerPos = new THREE.Vector3(cluster.centerX, WATER_SURFACE_Y, cluster.centerZ);
+            cluster.points.forEach((pt) => {
+                const x = cluster.centerX + pt.dx;
+                const z = cluster.centerZ + pt.dz;
+                const target = {
+                    id,
+                    kind: 'POLLUTION_CLUSTER',
+                    floating: true,
+                    phase: random() * Math.PI * 2,
+                    pos: new THREE.Vector3(x, WATER_SURFACE_Y, z),
+                    isCluster: true,
+                    clusterId,
+                    clusterCenter: centerPos
+                };
+                createPollutionMarker(target);
+                pollutionTargets.push(target);
+            });
+            const d = document.createElement('div');
+            d.className = 'floating-label';
+            d.innerText = id;
+            labelContainer.appendChild(d);
+            const clusterLabelPos = centerPos.clone().add(new THREE.Vector3(0, LABEL_OFFSET_ABOVE, 0));
+            labels.push({ id, pos: clusterLabelPos, el: d, target: { id, pos: centerPos, isCluster: true, clusterId } });
+
+            const rowEl = document.createElement('div');
+            rowEl.className = 'user-coord-row';
+            const coordSpan = document.createElement('span');
+            rowEl.appendChild(coordSpan);
+            userListEl.appendChild(rowEl);
+            userDataElements.push({ row: rowEl, coordSpan, target: { id, pos: centerPos, isCluster: true, clusterId } });
+        });
+
+        // Pre-create fish school distance rows (one per school)
+        for (let s = 0; s < fishSchools.length; s++) {
+            const row = document.createElement('div');
+            row.className = 'user-coord-row';
+            const left = document.createElement('span');
+            const right = document.createElement('span');
+            left.textContent = `FISH_SCHOOL_${s + 1}`;
+            row.appendChild(left);
+            row.appendChild(right);
+            fishListEl.appendChild(row);
+            fishDistanceRows.push({ labelEl: left, distEl: right, schoolIndex: s });
+        }
+
+        if (worldState.pollutionClusters.length > 1) {
+            const c2 = worldState.pollutionClusters[1];
+            const nearOffset = 26;
+            const dx = c2.centerX - nearOffset;
+            const dz = c2.centerZ - nearOffset;
+            droneGroup.position.set(dx, WATER_SURFACE_Y, dz);
+            droneGroup.rotation.y = Math.atan2(c2.centerX - dx, -(c2.centerZ - dz)) + Math.PI / 2;
+
+            // ensure at least one fish school is near the initial device position (surface cluster 2)
+            if (fishSchools.length > 0) {
+                const s = 0;
+                const sch = fishSchools[s];
+                sch.x = dx + 40;
+                sch.z = dz + 65;
+                const th0 = getTerrainHeight(sch.x, sch.z);
+                const surf0 = WATER_SURFACE_Y + getSurfaceWave(sch.x, sch.z, 0.0);
+                sch.y = Math.min(surf0 - 18, Math.max(th0 + 6, WATER_SURFACE_Y - 38));
+                sch.heading = Math.atan2(c2.centerX - sch.x, -(c2.centerZ - sch.z));
+
+                for (let i = 0; i < fishData.length; i++) {
+                    const f = fishData[i];
+                    if (f.school !== s) continue;
+                    const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
+                    f.x = sch.x + f.ox * ch + f.oz * sh;
+                    f.z = sch.z + f.oz * ch - f.ox * sh;
+                    f.y = sch.y + f.oy;
+                }
+            }
+        }
+
+        // Also anchor several fish schools near seabed (non-cluster) pollution targets,
+        // so deep pollutants feel "alive" with local marine life.
+        if (worldState.finalUsers && worldState.finalUsers.length > 0 && fishSchools.length > 1) {
+            const maxAnchored = Math.min(3, worldState.finalUsers.length, fishSchools.length - 1);
+            for (let k = 0; k < maxAnchored; k++) {
+                const p = worldState.finalUsers[k];
+                const s = 1 + k;
+                const sch = fishSchools[s];
+                // Place the school slightly offset from the pollutant barrel so it does not overlap the mesh directly.
+                sch.x = p.x + 18 * Math.cos(k * 2.1);
+                sch.z = p.z + 18 * Math.sin(k * 2.1);
+                const th0 = getTerrainHeight(sch.x, sch.z);
+                const surf0 = WATER_SURFACE_Y + getSurfaceWave(sch.x, sch.z, 0.0);
+                // Keep the school close to the seabed, but still with some clearance above the terrain.
+                sch.y = Math.min(surf0 - 20, Math.max(th0 + 5, p.y + 4));
+                sch.heading = Math.random() * Math.PI * 2;
+
+                for (let i = 0; i < fishData.length; i++) {
+                    const f = fishData[i];
+                    if (f.school !== s) continue;
+                    const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
+                    f.x = sch.x + f.ox * ch + f.oz * sh;
+                    f.z = sch.z + f.oz * ch - f.ox * sh;
+                    f.y = sch.y + f.oy;
+                }
+            }
+        }
 
         // --- Physics Vars (Simple Mode) ---
         const REAL_MAX_ACCEL = 25.0; const FAKE_DISPLAY_ACCEL = 5.28; const MAX_SPEED_HORIZ = 60.0; const MAX_SPEED_VERT = 12.0; const DRAG = 0.5; 
@@ -1624,14 +2242,36 @@
             return wind;
         }
         function getCardinalDirection(d){const dirs=['N','NE','E','SE','S','SW','W','NW'];return dirs[Math.round(((d%=360)<0?d+360:d)/45)%8];}
+        function lerpAngle(a, b, t) {
+            const twoPi = Math.PI * 2;
+            let d = (b - a) % twoPi;
+            if (d > Math.PI) d -= twoPi;
+            if (d < -Math.PI) d += twoPi;
+            return a + d * t;
+        }
+        // Temperature °C in [18.8505, 26.8991]; Salinity in [36.2958, 36.9518] (1e-3)
+        function getEnvTemp(pos, time) {
+            const n = simplex.noise3D(pos.x * 0.0015, pos.z * 0.0015, time * 0.02) * 0.5 + 0.5;
+            const depthNorm = Math.max(0, (WATER_SURFACE_Y - pos.y) / (WATER_SURFACE_Y - REEF_FLOOR));
+            const t = 18.8505 + (26.8991 - 18.8505) * (0.3 + 0.7 * n) * (1 - depthNorm * 0.25);
+            return Math.max(18.8505, Math.min(26.8991, t));
+        }
+        function getEnvSalinity(pos, time) {
+            const n = simplex.noise3D(pos.x * 0.002, pos.z * 0.002, time * 0.015) * 0.5 + 0.5;
+            const depthNorm = Math.max(0, (WATER_SURFACE_Y - pos.y) / (WATER_SURFACE_Y - REEF_FLOOR));
+            const s = 36.2958 + (36.9518 - 36.2958) * (0.4 + 0.6 * n) * (1 + depthNorm * 0.08);
+            return Math.max(36.2958, Math.min(36.9518, s));
+        }
 
         // --- Refs ---
         const uiRefs = {
             pos: document.getElementById('pos-val'),
             speed: document.getElementById('speed-val'),
-            accel: document.getElementById('accel-val'),
             wind: document.getElementById('wind-val'),
-            col: document.getElementById('collision-status'),
+            temp: document.getElementById('temp-val'),
+            salinity: document.getElementById('salinity-val'),
+            eastVel: document.getElementById('east-vel-val'),
+            northVel: document.getElementById('north-vel-val'),
             state: document.getElementById('agent-state'),
             warn: document.getElementById('warning-msg')
         };
@@ -1643,14 +2283,23 @@
             const dt = Math.min(clock.getDelta(), 0.1); 
             const time = clock.getElapsedTime();
 
-            skyDome.position.copy(camera.position);
+            skyGroup.position.copy(camera.position);
             skyUniforms.time.value = time;
+            if (droneGroup.position.y < WATER_SURFACE_Y) {
+                skyUniforms.topColor.value.copy(scene.background);
+                skyUniforms.horizonColor.value.copy(scene.background);
+                skyUniforms.bottomColor.value.copy(scene.background);
+            } else {
+                skyUniforms.topColor.value.setHex(0x0d47a1);
+                skyUniforms.horizonColor.value.setHex(0x42a5f5);
+                skyUniforms.bottomColor.value.setHex(0x90caf9);
+            }
 
             const waterArr = waterSurface.geometry.attributes.position.array;
             for (let i = 0; i < waterArr.length; i += 3) {
                 const bx = waterBase[i];
                 const bz = waterBase[i + 2];
-                waterArr[i + 1] = WATER_SURFACE_Y + getSurfaceWave(bx, bz, time);
+                waterArr[i + 1] = getSurfaceWave(bx, bz, time);
             }
             waterSurface.geometry.attributes.position.needsUpdate = true;
             _waterNormalsFrame = (_waterNormalsFrame + 1) % 6;
@@ -1659,6 +2308,12 @@
             const wind = getWindAt(droneGroup.position, time);
             let ad = Math.atan2(wind.z, wind.x)*(180/Math.PI); 
             uiRefs.wind.innerText = `${wind.length().toFixed(1)} m/s ${getCardinalDirection((90-ad+360)%360)}`;
+            const temp = getEnvTemp(droneGroup.position, time);
+            const sal = getEnvSalinity(droneGroup.position, time);
+            uiRefs.temp.innerText = temp.toFixed(4) + ' °C';
+            uiRefs.salinity.innerText = sal.toFixed(4) + ' (1e-3)';
+            uiRefs.eastVel.innerText = wind.x.toFixed(3) + ' m/s';
+            uiRefs.northVel.innerText = wind.z.toFixed(3) + ' m/s';
 
             const depthNorm = Math.max(0, Math.min(1, (droneGroup.position.y - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)));
             const depthDark = 0.36 + depthNorm * 0.72;
@@ -1674,20 +2329,50 @@
             // Subtle underwater light shimmer on seabed (doesn't obstruct vision)
             groundMat.emissiveIntensity = (0.015 + 0.02 * (1 - depthNorm)) * (0.65 + 0.35 * Math.sin(time * 0.9));
 
+            lightRaysMesh.material.uniforms.cameraY.value = camera.position.y;
+            lightRaysMesh.material.uniforms.surfaceY.value = WATER_SURFACE_Y;
+
             const forwardAxis = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), droneGroup.rotation.y);
             const forwardSpeedForFx = velocity.dot(forwardAxis);
             const speedMag = velocity.length();
             const trailPower = Math.min(1, speedMag / 40);
-            droneGroup.userData.noseTrail.material.opacity = Math.max(0, -forwardSpeedForFx / 35) * 0.65;
-            droneGroup.userData.noseTrail.scale.setScalar(0.8 + trailPower * 0.7);
-            droneGroup.userData.tailTrail.material.opacity = Math.max(0, forwardSpeedForFx / 35) * 0.78;
-            droneGroup.userData.tailTrail.scale.setScalar(0.9 + trailPower * 1.1);
+            droneGroup.userData.noseTrail.material.opacity = 0;
+            droneGroup.userData.noseTrailGlow.material.opacity = 0;
+            droneGroup.userData.tailTrail.material.opacity = 0;
+            droneGroup.userData.tailTrailGlow.material.opacity = 0;
+            if (droneGroup.userData.hullBlueMat) {
+                const moveT = Math.min(1, speedMag / 24);
+                const moveGlow = 0.14 + 0.52 * moveT;
+                droneGroup.userData.hullBlueMat.emissiveIntensity = moveGlow;
+                droneGroup.userData.hullBlueMat.emissive.lerpColors(
+                    droneGroup.userData.hullEmissiveRest,
+                    droneGroup.userData.hullEmissiveMove,
+                    moveT
+                );
+            }
             droneGroup.userData.frontLight.intensity = 0.9 + trailPower * 1.1 + (1 - depthNorm) * 0.7;
             droneGroup.userData.downLight.intensity = 0.65 + (1 - depthNorm) * 1.15;
+            if (droneGroup.userData.statusLed) {
+                droneGroup.userData.statusLed.material.emissiveIntensity = 0.15 + 0.75 * (Math.sin(time * 3.8) > 0.2 ? 1 : 0.08);
+            }
 
             // State Update Logic
             if (controlMode === 'SIMPLE') {
-                let turn = 0; if(keys.ArrowLeft){droneGroup.rotation.y+=2*dt;turn=1;} if(keys.ArrowRight){droneGroup.rotation.y-=2*dt;turn=1;}
+                // Track movement within the current 5 second window (any motion in this window counts as "moving").
+                const isMoving = keys.w || keys.s || keys.a || keys.d || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight;
+                if (isMoving) hadMovementInLast5Sec = true;
+
+                // Battery drain every 5 seconds: 0.05% base + 0.05% extra if moved in that period
+                drainAccumulatedTime += dt;
+                if (drainAccumulatedTime >= 5) {
+                    simpleModeBattery -= 0.05;
+                    if (hadMovementInLast5Sec) simpleModeBattery -= 0.05;
+                    simpleModeBattery = Math.max(0, simpleModeBattery);
+                    drainAccumulatedTime = 0;
+                    hadMovementInLast5Sec = false;
+                }
+
+                let turn = 0; if(keys.ArrowLeft){droneGroup.rotation.y+=2*dt;turn=1;} if(keys.ArrowRight){droneGroup.rotation.y-=2*dt;turn=-1;}
                 const yaw = droneGroup.rotation.y;
                 
                 // FIXED DIRECTIONS: Forward is -Z (Into Screen), Right is +X
@@ -1709,36 +2394,29 @@
                 if (hVel.length() > MAX_SPEED_HORIZ) { hVel.normalize().multiplyScalar(MAX_SPEED_HORIZ); velocity.x = hVel.x; velocity.z = hVel.y; }
                 if (velocity.y > MAX_SPEED_VERT) velocity.y = MAX_SPEED_VERT; if (velocity.y < -MAX_SPEED_VERT) velocity.y = -MAX_SPEED_VERT;
 
-                uiRefs.accel.innerText = ((acc.length()+Math.abs(vacc))/REAL_MAX_ACCEL*FAKE_DISPLAY_ACCEL).toFixed(2)+" m/s²";
-                
                 // Visual Tilt - Fixed to match Control mode: forward movement = negative pitch (nose down)
                 const forwardSpeed = velocity.dot(fwd);
                 const sideSpeed = velocity.dot(rgt);
                 const targetPitch = THREE.MathUtils.clamp(-forwardSpeed * 0.0042, -0.22, 0.22);
-                const targetRoll = THREE.MathUtils.clamp(-turn * 0.12 - sideSpeed * 0.0012, -0.16, 0.16);
+                const targetRoll = THREE.MathUtils.clamp(-turn * 0.14 - sideSpeed * 0.0012, -0.18, 0.18);
                 droneGroup.rotation.x = THREE.MathUtils.lerp(droneGroup.rotation.x, targetPitch, 0.16);
                 droneGroup.rotation.z = THREE.MathUtils.lerp(droneGroup.rotation.z, targetRoll, 0.16);
 
                 if (acc.lengthSq()>0 || Math.abs(vacc)>0 || turn>0) { uiRefs.state.innerText="MOVING"; uiRefs.state.className="ui-value status-orange"; }
                 else { uiRefs.state.innerText="STABLE"; uiRefs.state.className="ui-value status-green"; }
 
-                motorVal.innerText = "N/A"; 
-                batVal.innerText = "100%"; batBar.style.width = "100%";
-                attVal.innerText = "0°, 0°";
+                batVal.innerText = simpleModeBattery.toFixed(2) + "%";
+                batBar.style.width = simpleModeBattery + "%";
+                if (simpleModeBattery < 20) batBar.style.background = "#d32f2f";
+                else batBar.style.background = "#388e3c";
 
             } else {
                 const dyn = droneDynamics.update(dt, keys, wind, droneGroup);
                 velocity.copy(droneDynamics.velocity);
-                const motors = dyn.motors.map(m => Math.round(m*100));
-                motorVal.innerText = motors.map(m => m.toString().padStart(3, ' ')).join(" ");
                 batVal.innerText = droneDynamics.battery.toFixed(1) + "%";
                 batBar.style.width = droneDynamics.battery + "%";
                 if(droneDynamics.battery < 20) batBar.style.background = "#d32f2f";
                 else batBar.style.background = "#388e3c";
-                const pDeg = (droneDynamics.euler.x * 180 / Math.PI).toFixed(0);
-                const rDeg = (droneDynamics.euler.z * 180 / Math.PI).toFixed(0);
-                attVal.innerText = `${pDeg}°, ${rDeg}°`;
-                uiRefs.accel.innerText = "---"; 
                 if(keys.w||keys.s||keys.a||keys.d||keys.ArrowLeft||keys.ArrowRight||keys.ArrowUp||keys.ArrowDown) {
                      uiRefs.state.innerText="MOVING"; uiRefs.state.className="ui-value status-orange";
                 } else {
@@ -1770,41 +2448,22 @@
                 droneGroup.position.y=Math.max(droneGroup.position.y,h+1.5); velocity.y=0; col=true;
             }else droneGroup.position.y+=velocity.y*dt;
 
-            // Surface constraint + buoyancy: can move on surface, but cannot leave the water
-            const SURFACE_DRAFT = 1.2; // keep the vehicle slightly under the surface
-            const capY = WATER_SURFACE_Y + getSurfaceWave(droneGroup.position.x, droneGroup.position.z, time) - SURFACE_DRAFT;
-            if (droneGroup.position.y > capY) {
-                droneGroup.position.y = capY;
+            // Surface cap: allow floating on surface, but do not allow leaving the water
+            const surfaceY = WATER_SURFACE_Y + getSurfaceWave(droneGroup.position.x, droneGroup.position.z, time);
+            if (droneGroup.position.y > surfaceY) {
+                droneGroup.position.y = surfaceY;
                 if (velocity.y > 0) velocity.y = 0;
-            }
-            if (!keys.ArrowDown && droneGroup.position.y > capY - 6) {
-                droneGroup.position.y = THREE.MathUtils.lerp(droneGroup.position.y, capY, 0.08);
-                if (velocity.y < 0) velocity.y *= 0.35;
-            }
-
-            // Add gentle wave-following attitude near the surface (subtle, non-blocking)
-            if (droneGroup.position.y > WATER_SURFACE_Y - 10) {
-                const dx = 18;
-                const x = droneGroup.position.x;
-                const z = droneGroup.position.z;
-                const wxp = getSurfaceWave(x + dx, z, time);
-                const wxm = getSurfaceWave(x - dx, z, time);
-                const wzp = getSurfaceWave(x, z + dx, time);
-                const wzm = getSurfaceWave(x, z - dx, time);
-                const slopeX = (wxp - wxm) / (2 * dx);
-                const slopeZ = (wzp - wzm) / (2 * dx);
-                const wavePitch = THREE.MathUtils.clamp(-slopeZ * 0.32, -0.08, 0.08);
-                const waveRoll = THREE.MathUtils.clamp(slopeX * 0.32, -0.08, 0.08);
-                droneGroup.rotation.x += wavePitch * 0.35;
-                droneGroup.rotation.z += waveRoll * 0.35;
             }
 
             if(controlMode==='CONTROL' && droneGroup.position.y < getTerrainHeight(droneGroup.position.x, droneGroup.position.z)+2) {
                 if(velocity.y < -1) velocity.y *= -0.2; 
             }
 
-            if(col){uiRefs.col.innerText="TRUE";uiRefs.col.classList.add('status-red');uiRefs.warn.style.display='block';}
-            else{uiRefs.col.innerText="FALSE";uiRefs.col.classList.remove('status-red');uiRefs.warn.style.display='none';}
+            if(col){ uiRefs.warn.style.display='block'; }
+            else{ uiRefs.warn.style.display='none'; }
+
+            const diveHintEl = document.getElementById('dive-hint');
+            if (diveHintEl) diveHintEl.style.display = (droneGroup.position.y >= WATER_SURFACE_Y - 3) ? 'block' : 'none';
 
             const throt = (controlMode==='SIMPLE') ? (velocity.length()*0.1 + (keys.ArrowUp?0.5:0)) : (droneDynamics.baseThrottle);
             props.forEach((p,i)=>p.rotation.y+=(0.5+throt)*(i%2===0?1:-1));
@@ -1824,11 +2483,89 @@
                 let px=parr[i*3],py=parr[i*3+1],pz=parr[i*3+2];
                 const pw=getWindAt(new THREE.Vector3(px,py,pz),time); const sm=pVelocities[i];
                 px+=pw.x*dt*sm*1.6; py+=pw.y*dt*sm*0.65; pz+=pw.z*dt*sm*1.6;
+                const surfaceY = WATER_SURFACE_Y + getSurfaceWave(px, pz, time);
+                if (py > surfaceY) py = surfaceY - 0.5;
                 if(py<REEF_FLOOR)py+=MAX_ALT-REEF_FLOOR; if(py>MAX_ALT)py-=MAX_ALT-REEF_FLOOR;
                 if(Math.abs(px)>MAP_HALF_SIZE)px=-px; if(Math.abs(pz)>MAP_HALF_SIZE)pz=-pz;
                 parr[i*3]=px; parr[i*3+1]=py; parr[i*3+2]=pz;
             }
             windParticles.geometry.attributes.position.needsUpdate=true;
+
+            if (fishData.length > 0 && fishMesh.instanceMatrix) {
+                const surfaceYAt = (x, z) => WATER_SURFACE_Y + getSurfaceWave(x, z, time);
+                const uuvUnderwater = droneGroup.position.y < WATER_SURFACE_Y - 8;
+
+                // update school centers (tight schooling)
+                for (let s = 0; s < fishSchools.length; s++) {
+                    const sch = fishSchools[s];
+                    sch.heading += Math.sin(time * 0.25 + sch.phase) * 0.002;
+                    sch.x += Math.sin(sch.heading) * sch.speed * dt;
+                    sch.z += Math.cos(sch.heading) * sch.speed * dt;
+                    sch.y += Math.sin(time * 0.55 + sch.phase) * 0.06 * dt;
+
+                    // keep schools away from the coast corner (land/shallow)
+                    if (getCoastBlend(sch.x, sch.z) > 0.7) sch.heading += 0.8 * dt;
+
+                    // When the UUV is underwater, gently pull schools back towards a loose radius around it,
+                    // so the player almost always has some fish in view while still allowing wide roaming.
+                    if (uuvUnderwater) {
+                        const dxu = sch.x - droneGroup.position.x;
+                        const dzu = sch.z - droneGroup.position.z;
+                        if (dxu * dxu + dzu * dzu > 650 * 650) {
+                            const ang = Math.random() * Math.PI * 2;
+                            const r = 80 + Math.random() * 260;
+                            sch.x = droneGroup.position.x + Math.cos(ang) * r;
+                            sch.z = droneGroup.position.z + Math.sin(ang) * r;
+                            sch.heading = ang + Math.PI;
+                            const th0 = getTerrainHeight(sch.x, sch.z);
+                            const surf0 = surfaceYAt(sch.x, sch.z);
+                            sch.y = Math.min(surf0 - 14, Math.max(th0 + 6, droneGroup.position.y - (12 + Math.random() * 55)));
+                        }
+                    }
+
+                    if (Math.abs(sch.x) > MAP_HALF_SIZE - 40) sch.heading = Math.PI - sch.heading;
+                    if (Math.abs(sch.z) > MAP_HALF_SIZE - 40) sch.heading = -sch.heading;
+
+                    const th = getTerrainHeight(sch.x, sch.z);
+                    if (sch.y < th + 6) sch.y = th + 6;
+                    const surf = surfaceYAt(sch.x, sch.z);
+                    if (sch.y > surf - 12) sch.y = surf - 12;
+                }
+
+                for (let i = 0; i < fishData.length; i++) {
+                    const f = fishData[i];
+                    const sch = fishSchools[f.school];
+                    const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
+
+                    // target point inside the moving school cloud (rotate local offsets by heading)
+                    const tx = sch.x + f.ox * ch + f.oz * sh;
+                    const tz = sch.z + f.oz * ch - f.ox * sh;
+                    const ty = sch.y + f.oy;
+
+                    // steer towards target, but with forward bias so they keep swimming
+                    const toAng = Math.atan2(tx - f.x, tz - f.z);
+                    const steer = lerpAngle(f.rotY, toAng, 0.85 * dt);
+                    f.rotY = steer + Math.sin(time * 1.2 + f.phase) * 0.015;
+
+                    // move
+                    f.x += Math.sin(f.rotY) * f.speed * dt;
+                    f.z += Math.cos(f.rotY) * f.speed * dt;
+                    f.y += (ty - f.y) * (0.8 * dt);
+
+                    // clamp against seabed + surface
+                    const th = getTerrainHeight(f.x, f.z);
+                    if (f.y < th + 3) f.y = th + 3;
+                    const surf = surfaceYAt(f.x, f.z);
+                    if (f.y > surf - 6) f.y = surf - 6;
+
+                    fishDummy.position.set(f.x, f.y, f.z);
+                    fishDummy.rotation.set(0, f.rotY, 0);
+                    fishDummy.scale.set(f.scale * 1.05, f.scale * 0.72, f.scale * 1.25);
+                    fishDummy.updateMatrix();
+                    fishMesh.setMatrixAt(i, fishDummy.matrix);
+                }
+                fishMesh.instanceMatrix.needsUpdate = true;
+            }
 
             pollutionTargets.forEach(target => {
                 if (target.floating) {
@@ -1863,12 +2600,22 @@
             });
 
             userDataElements.forEach(userData => {
-                const pollutionPos = userData.target.pos;
-                const distance = droneGroup.position.distanceTo(pollutionPos);
+                const pollutantPos = userData.target.pos;
+                const distance = droneGroup.position.distanceTo(pollutantPos);
                 const id = userData.target.id;
-                const posStr = `[${pollutionPos.x.toFixed(0)},${pollutionPos.y.toFixed(1)},${pollutionPos.z.toFixed(0)}]`;
+                const posStr = `[${pollutantPos.x.toFixed(0)},${pollutantPos.y.toFixed(1)},${pollutantPos.z.toFixed(0)}]`;
                 userData.coordSpan.innerHTML = `${id} ${posStr} <span style="color:#6f5cff">| Distance: ${distance.toFixed(1)} m</span>`;
                 userData.row.title = `Distance ${distance.toFixed(1)} m`;
+            });
+
+            // update fish school position + distance display (use different color from pollutants)
+            fishDistanceRows.forEach(rowInfo => {
+                const sch = fishSchools[rowInfo.schoolIndex];
+                const schoolPos = new THREE.Vector3(sch.x, sch.y, sch.z);
+                const dist = droneGroup.position.distanceTo(schoolPos);
+                const posStr = `[${sch.x.toFixed(0)},${sch.y.toFixed(0)},${sch.z.toFixed(0)}]`;
+                rowInfo.distEl.innerHTML = `${posStr} <span style="color:#ff9800">| Dist: ${dist.toFixed(1)} m</span>`;
+                rowInfo.labelEl.title = `Fish School ${rowInfo.schoolIndex + 1}`;
             });
 
             renderer.render(scene, camera);
@@ -1909,7 +2656,11 @@
             }
         });
 
-        document.getElementById('btn-results').onclick = () => window.location.href = 'tasks.html';
+        // Open tasks demo
+        const btnResults = document.getElementById('btn-results');
+        if (btnResults) {
+            btnResults.onclick = () => window.location.href = 'tasks.html';
+        }
 
         animate();
     </script>
