@@ -54,3 +54,9 @@ node_modules/
 # Temporary files
 *.tmp
 *.temp
+
+# Generated demo data snapshots
+drone_map_data.json
+drone_path_data.json
+oneocean_env_data.json
+oneocean_task_data.json

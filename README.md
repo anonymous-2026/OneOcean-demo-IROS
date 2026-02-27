@@ -1,14 +1,14 @@
 # OneOcean UUV Online Demo
 
-This folder follows the `demo_ref` deployment layout and contains a browser demo adapted to underwater scenarios.
+This folder keeps the `demo_ref` deployment style and provides an underwater web demo.
 
 ## Files
 
-- `index.html`: interactive environment view (UUV control + currents)
-- `path.html`: experiment/path visualization page
-- `drone_map_data.json`: environment seed/state data (compatible schema)
-- `drone_path_data.json`: path/experiment data (compatible schema)
-- `example/`: static figures and GIF previews
+- `index.html`: ocean environment page (UUV control + currents + pollutant targets)
+- `path.html`: task example page (inspection/cleanup task visualizations)
+- `example/`: static screenshots and GIF previews
+
+> JSON data files are no longer tracked in this repository. The demo now runs with built-in defaults and optional import/export.
 
 ## Run locally
 
@@ -24,5 +24,5 @@ Open:
 
 ## Notes
 
-- Control/input logic is preserved from the reference online demo.
-- Visual changes focus on seabed terrain, coral/seagrass objects, UUV-style vehicle, current particles, and water surface details.
+- Control/key mapping remains consistent with the reference online demo.
+- Visual updates include larger terrain, trenches/cracks, denser seagrass/coral, improved UUV body, current particles, surface waves, depth-aware lighting, and pollutant target markers.

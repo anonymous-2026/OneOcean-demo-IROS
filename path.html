@@ -16,7 +16,7 @@
             max-height: 90vh; overflow-y: auto;
             border-radius: 2px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-left: 5px solid #ff4400;
+            border-left: 5px solid #1d9bd1;
             pointer-events: auto; user-select: none; z-index: 100;
         }
         #ui-panel::-webkit-scrollbar { width: 6px; }
@@ -40,7 +40,7 @@
             transition: all 0.2s; text-align: center;
         }
         .mode-btn:hover { background: #ccc; }
-        .mode-btn.active { background: #ff4400; color: white; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .mode-btn.active { background: #1d9bd1; color: white; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
         .mode-btn:disabled { opacity: 0.55; cursor: not-allowed; }
         
         #btn-snapshot { width: 100%; margin-top: 8px; background: #333; color: #fff; }
@@ -57,14 +57,14 @@
         /* Labels */
         #labels-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 50; }
         .floating-label {
-            position: absolute; background: #ff4400; color: white;
+            position: absolute; background: #1d9bd1; color: white;
             padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;
             transform: translate(-50%, -100%); white-space: nowrap;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: none; border: 1px solid white;
         }
         .floating-label::after {
             content: ''; position: absolute; top: 100%; left: 50%; margin-left: -4px;
-            border-width: 4px; border-style: solid; border-color: #ff4400 transparent transparent transparent;
+            border-width: 4px; border-style: solid; border-color: #1d9bd1 transparent transparent transparent;
         }
 
         /* Loading */
@@ -79,7 +79,7 @@
             gap: 10px;
             padding: 10px 12px;
             background: rgba(240, 240, 240, 0.95);
-            border-left: 5px solid #ff4400;
+            border-left: 5px solid #1d9bd1;
             border-radius: 4px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.15);
             font-size: 10px;
@@ -92,7 +92,7 @@
             width: 14px;
             height: 14px;
             border: 2px solid #ccc;
-            border-top-color: #ff4400;
+            border-top-color: #1d9bd1;
             border-radius: 50%;
             animation: loading-spin 0.9s linear infinite;
         }
@@ -107,37 +107,35 @@
 
     <div id="loading-overlay">
         <div class="loading-spinner"></div>
-        <div id="loading-text">Loading path data...</div>
+        <div id="loading-text">Loading task examples...</div>
     </div>
 
     <div id="canvas-container"></div>
 
     <div id="ui-panel">
-        <div class="ui-header">OneOcean Experiments</div>
+        <div class="ui-header">OneOcean Task Examples</div>
         
         <div class="ui-row">
             <span class="ui-label">MODE:</span>
-            <span class="ui-value status-blue" id="mode-val">FREE FLIGHT</span>
+            <span class="ui-value status-blue" id="mode-val">FREE EXPLORATION</span>
         </div>
         <div class="ui-row">
-            <span class="ui-label">OBSTACLES:</span>
+            <span class="ui-label">REEF OBJECTS:</span>
             <span class="ui-value" id="obs-count">...</span>
         </div>
         <div class="disclaimer"><span class="legend-dot"></span> Cyan particles: Current Flow</div>
 
         <div class="divider"></div>
         
-        <!-- EXP 1 -->
-        <div class="section-title">① ATC CONTROL (PID vs FEAR)</div>
-        <div class="ui-label" style="font-size: 9px; color:#555; margin-bottom:4px;">PID(Red) vs FEAR-PID(Blue)</div>
+        <div class="section-title">① INSPECTION TASK</div>
+        <div class="ui-label" style="font-size: 9px; color:#555; margin-bottom:4px;">Baseline path (Red) vs optimized path (Blue)</div>
         <div class="btn-group">
             <button id="btn-atc-fly" class="mode-btn" disabled>FLY (FPV)</button>
             <button id="btn-atc-static" class="mode-btn" disabled>RESULT (STATIC)</button>
         </div>
         
-        <!-- EXP 2 -->
-        <div class="section-title">② PATH PLANNING</div>
-        <div class="ui-label" style="font-size: 9px; color:#555; margin-bottom:4px;">ACS(Yell) / TD3(Grn) / ACS-DS(Blue)</div>
+        <div class="section-title">② CLEANUP TASK</div>
+        <div class="ui-label" style="font-size: 9px; color:#555; margin-bottom:4px;">Sweep (Yellow) / Patrol (Green) / Coverage (Blue)</div>
         <div class="btn-group">
             <button id="btn-path-fly" class="mode-btn" disabled>FLY (FPV)</button>
             <button id="btn-path-static" class="mode-btn" disabled>RESULT (STATIC)</button>
@@ -153,19 +151,19 @@
         <button id="btn-snapshot" class="mode-btn" style="width:100%; margin-bottom:5px;">SNAPSHOT (PNG)</button>
         <div class="btn-group">
             <button id="btn-import-env" class="mode-btn">IMPORT ENV</button>
-            <button id="btn-import" class="mode-btn">IMPORT PATH</button>
+            <button id="btn-import" class="mode-btn">IMPORT TASK</button>
         </div>
-        <button id="btn-export-path" class="mode-btn" style="width:100%; margin-top:5px; background: #e6a40b; color:white;">EXPORT PATH</button>
+        <button id="btn-export-path" class="mode-btn" style="width:100%; margin-top:5px; background: #1d9bd1; color:white;">EXPORT TASK</button>
         <input type="file" id="file-input" accept=".json">
 
         <div class="divider"></div>
-        <div class="section-title">SEABED BEACONS / SIGNAL</div>
+        <div class="section-title">POLLUTANT TARGETS / DISTANCE</div>
         <div id="user-list"></div>
     </div>
 
     <div id="labels-container"></div>
 
-    <button id="btn-back" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #ff4400; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Back to Ocean Env &larr;</button>
+    <button id="btn-back" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #1d9bd1; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Back to Ocean Env &larr;</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -228,204 +226,106 @@
             experiments: []
         };
 
-        // Storage Keys (only used for import, not auto-load)
-        const ENV_STORAGE_KEY = 'oneocean_uuv_env_v1'; // Same as index.html
-        const PATH_STORAGE_KEY = 'drone_path_data_v1';
+        // Storage Keys
+        const ENV_STORAGE_KEY = 'oneocean_uuv_env_v1';
+        const PATH_STORAGE_KEY = 'oneocean_task_data_v1';
 
-        // Load Environment Data
-        // IMPORTANT:
-        // - The terrain/buildings are generated immediately below in this script.
-        // - To make the rendered scene match drone_map_data.json, we must seed from cached data first,
-        //   then (if the on-disk file differs) reload once after updating the cache.
+        // Load Environment Data (local only)
         let isLoadedFromData = false;
-
-        // 1) Try sessionStorage/localStorage first (sync) so the seed is applied before SimplexNoise is constructed.
-        // sessionStorage is used as a fallback when localStorage quota is exceeded.
-        const sessionEnvKey = `${ENV_STORAGE_KEY}__session`;
-        const sessionEnvData = sessionStorage.getItem(sessionEnvKey);
-        if (sessionEnvData) {
+        const cachedEnvData = localStorage.getItem(ENV_STORAGE_KEY);
+        if (cachedEnvData) {
             try {
-                const parsed = JSON.parse(sessionEnvData);
-                if (parsed.seed && parsed.cityBuildings) {
+                const parsed = JSON.parse(cachedEnvData);
+                if (parsed.seed && parsed.mountainBuildings) {
                     worldState = parsed;
                     isLoadedFromData = true;
                     seedRandom(worldState.seed);
-                    console.log("Loaded environment data from sessionStorage");
                 }
             } catch (e) {
-                console.warn("Failed to parse sessionStorage environment data, will fetch from file.");
+                console.warn("Failed to parse cached environment data.");
             }
-            // Consume one-shot session cache after attempting to load it.
-            sessionStorage.removeItem(sessionEnvKey);
         }
-
         if (!isLoadedFromData) {
-            const cachedEnvData = localStorage.getItem(ENV_STORAGE_KEY);
-            if (cachedEnvData) {
-                try {
-                    const parsed = JSON.parse(cachedEnvData);
-                    if (parsed.seed && parsed.cityBuildings) {
-                        worldState = parsed;
-                        isLoadedFromData = true;
-                        seedRandom(worldState.seed);
-                        console.log("Loaded environment data from localStorage");
-                    }
-                } catch (e) {
-                    console.warn("Failed to parse cached environment data, will fetch from file.");
-                }
-            }
+            worldState.seed = Math.random() * 100000;
+            seedRandom(worldState.seed);
         }
 
-        // 2) Always try to fetch the file (latest source of truth). If it differs, update cache + reload.
-        fetch('drone_map_data.json', { cache: 'no-store' })
-            .then(response => {
-                if (response.ok) return response.json();
-                throw new Error('drone_map_data.json not found');
-            })
-            .then(data => {
-                console.log("Loading environment data from drone_map_data.json...");
-                if (data.seed && data.cityBuildings) {
-                    const seedChanged = !isLoadedFromData || worldState.seed !== data.seed;
-                    if (seedChanged) {
-                        worldState = data;
-                        isLoadedFromData = true;
-                        let cached = false;
-                        try {
-                            localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(data));
-                            cached = true;
-                        } catch (e) {
-                            console.warn("Failed to cache environment data to localStorage; using sessionStorage instead.");
-                            try {
-                                sessionStorage.setItem(sessionEnvKey, JSON.stringify(data));
-                                cached = true;
-                            } catch (e2) {
-                                console.warn("Failed to cache environment data to sessionStorage.");
-                            }
-                        }
-                        seedRandom(worldState.seed);
-                        // Only reload if caching succeeded, otherwise we'd risk a reload loop.
-                        if (cached) {
-                            const reloadKey = `env_reload_done_${data.seed}`;
-                            if (!sessionStorage.getItem(reloadKey)) {
-                                sessionStorage.setItem(reloadKey, '1');
-                                console.log("Map data updated, reloading scene...");
-                                location.reload();
-                            }
-                        }
-                    }
-                } else {
-                    console.warn("Invalid environment data format in drone_map_data.json");
-                }
-            })
-            .catch(err => {
-                if (!isLoadedFromData) {
-                    // No file + no cache: fall back to a random seed.
-                    worldState.seed = Math.random() * 100000;
-                    seedRandom(worldState.seed);
-                    console.log("drone_map_data.json not found; using a random seed.");
-                } else {
-                    console.log("drone_map_data.json not found; using cached environment data.");
-                }
-            });
-        
-
-        // Load Path Data - Only from drone_path_data.json
         let pathDataLoaded = false;
-        // Declare waypoints early to avoid ReferenceError when loadPathDataIntoState is called
         let waypoints = [];
-        
-        // Function to validate data compatibility between map and path data
-        function validateDataCompatibility() {
-            // Only validate once the environment has been loaded from cached/file data.
-            // (Before that, worldState.seed may still be the default Date.now() and can trigger false warnings.)
-            if (!isLoadedFromData) return;
-            if (pathData && pathData.mapSeed && worldState && worldState.seed) {
-                if (pathData.mapSeed !== worldState.seed) {
-                    const msg = `⚠️ WARNING: Path data seed (${pathData.mapSeed}) does not match current map seed (${worldState.seed}).\n\nPath may not align correctly with current map!\n\nPlease:\n1. Export current map data from index.html\n2. Run generate_path.py to regenerate path data\n3. Reload this page`;
-                    console.warn(msg);
-                } else {
-                    console.log("✓ Path data seed matches map seed - data is compatible");
-                }
-            } else if (pathData && !pathData.mapSeed) {
-                console.warn("⚠️ Path data does not contain mapSeed field. Cannot verify compatibility.");
-                console.warn("⚠️ Please regenerate path data using the latest generate_path.py.");
-            }
+
+        function createDefaultTaskData() {
+            const anchorY = 112;
+            const inspectWaypoints = [
+                { x: -420, y: anchorY, z: -360 },
+                { x: -210, y: anchorY - 6, z: -170 },
+                { x: 40, y: anchorY - 12, z: -90 },
+                { x: 220, y: anchorY - 16, z: 120 },
+                { x: 430, y: anchorY - 18, z: 260 }
+            ];
+            const cleanupWaypoints = [
+                { x: -500, y: anchorY - 18, z: 200 },
+                { x: -280, y: anchorY - 22, z: 350 },
+                { x: -60, y: anchorY - 24, z: 390 },
+                { x: 150, y: anchorY - 21, z: 250 },
+                { x: 320, y: anchorY - 17, z: 80 },
+                { x: 480, y: anchorY - 15, z: -130 }
+            ];
+            return {
+                mapSeed: worldState.seed,
+                waypoints: inspectWaypoints,
+                experiments: [
+                    { name: 'INSPECT_BASELINE', paths: [inspectWaypoints] },
+                    { name: 'INSPECT_OPTIMIZED', paths: [[
+                        { x: -420, y: anchorY, z: -360 },
+                        { x: -270, y: anchorY - 4, z: -230 },
+                        { x: -30, y: anchorY - 10, z: -80 },
+                        { x: 160, y: anchorY - 14, z: 80 },
+                        { x: 430, y: anchorY - 18, z: 260 }
+                    ]] },
+                    { name: 'CLEANUP_SWEEP', paths: [cleanupWaypoints] },
+                    { name: 'CLEANUP_PATROL', paths: [[
+                        { x: -500, y: anchorY - 16, z: 200 },
+                        { x: -350, y: anchorY - 19, z: 300 },
+                        { x: -80, y: anchorY - 24, z: 280 },
+                        { x: 180, y: anchorY - 19, z: 180 },
+                        { x: 360, y: anchorY - 16, z: -10 },
+                        { x: 480, y: anchorY - 15, z: -130 }
+                    ]] },
+                    { name: 'CLEANUP_COVERAGE', paths: [[
+                        { x: -500, y: anchorY - 18, z: 200 },
+                        { x: -320, y: anchorY - 22, z: 360 },
+                        { x: -20, y: anchorY - 26, z: 360 },
+                        { x: 220, y: anchorY - 20, z: 220 },
+                        { x: 360, y: anchorY - 17, z: 60 },
+                        { x: 480, y: anchorY - 15, z: -130 }
+                    ]] }
+                ]
+            };
         }
-        
+
         const loadPathDataIntoState = (data) => {
-            console.log("Loading path data...", data);
-            if (data.paths || data.waypoints || data.experiments) {
-                pathData = data;
-                // Note: We intentionally do NOT auto-cache path data to localStorage because
-                // drone_path_data.json can be very large and exceed browser quota.
-                // Update waypoints if available
-                if (data.waypoints && data.waypoints.length > 0) {
-                    waypoints = data.waypoints.map(w => new THREE.Vector3(w.x, w.y, w.z));
-                    console.log(`Loaded ${waypoints.length} waypoints`);
-                }
-                pathDataLoaded = true;
-                setLoadingOverlay(false);
-                setModeButtonsEnabled(true);
-                
-                // Validate compatibility after loading (map data should be loaded by now)
-                validateDataCompatibility();
-                
-                // Check if we need to restart current experiment to apply new data
-                // (If scene is already running)
-                if (window.appMode) {
-                    if (appMode.includes('ATC')) setupATC(appMode.includes('FLY') ? 'FLY' : 'STATIC');
-                    else if (appMode.includes('PATH')) setupPath(appMode.includes('FLY') ? 'FLY' : 'STATIC');
-                }
-            } else {
-                console.warn("Invalid path data format");
+            if (!(data.paths || data.waypoints || data.experiments)) return;
+            pathData = data;
+            if (data.waypoints && data.waypoints.length > 0) {
+                waypoints = data.waypoints.map(w => new THREE.Vector3(w.x, w.y, w.z));
             }
+            pathDataLoaded = true;
+            setLoadingOverlay(false);
+            setModeButtonsEnabled(true);
+            if (!window.appMode) setupATC('STATIC');
         };
 
-        // Also try to load from file (will update localStorage if successful)
-        // This is the primary source of truth for GitHub Pages deployments.
-        let hasLocalStorageData = false;
-        fetch('drone_path_data.json', { cache: 'no-store' })
-            .then(response => {
-                if (response.ok) return response.json();
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            })
-            .then(data => {
-                console.log("Loaded drone_path_data.json from file");
-                loadPathDataIntoState(data);
-                // validateDataCompatibility is already called inside loadPathDataIntoState
-                // Auto-start with first experiment in static mode after data is loaded
-                if (!window.appMode) {
-                    setupATC('STATIC');
-                }
-            })
-            .catch(err => {
-                console.warn("Failed to load drone_path_data.json from file:", err);
-                // Fallback to localStorage only if user previously imported a smaller JSON
-                const importedPathData = localStorage.getItem(PATH_STORAGE_KEY);
-                if (importedPathData) {
-                    try {
-                        const parsed = JSON.parse(importedPathData);
-                        if (parsed.paths || parsed.waypoints || parsed.experiments) {
-                            console.log("Using cached path data from localStorage");
-                            loadPathDataIntoState(parsed);
-                            hasLocalStorageData = true;
-                            if (!window.appMode) setupATC('STATIC');
-                            return;
-                        }
-                    } catch (e) {
-                        console.error("Failed to load path data from localStorage", e);
-                    }
-                }
-
-                console.error("No path data available. Please:");
-                console.error("Import path data using the IMPORT PATH button");
-                setLoadingOverlay(false);
-                alert("Error: drone_path_data.json not found and no cached data available.\n\nPlease:\n1. Generate it using generate_path.py, OR\n2. Import path data using the IMPORT PATH button");
-            });
-
-
-        // Seed will be applied after environment data is loaded (if available)
-        // If not loaded, seed will be set in the fetch catch block
+        const importedPathData = localStorage.getItem(PATH_STORAGE_KEY);
+        if (importedPathData) {
+            try {
+                const parsed = JSON.parse(importedPathData);
+                loadPathDataIntoState(parsed);
+            } catch (e) {
+                loadPathDataIntoState(createDefaultTaskData());
+            }
+        } else {
+            loadPathDataIntoState(createDefaultTaskData());
+        }
 
         // --- 1. Scene Initialization ---
         const clock = new THREE.Clock();
@@ -434,7 +334,7 @@
         scene.background = new THREE.Color(fogColor);
         scene.fog = new THREE.FogExp2(fogColor, 0.0018);
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 4000); 
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 7000); 
         camera.position.set(0, 150, 200); 
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -459,10 +359,10 @@
         // --- 3. Terrain & Environment ---
         // Pass our custom random function to SimplexNoise for deterministic terrain
         const simplex = new SimplexNoise(random);
-        const MAP_SIZE = 1000;
+        const MAP_SIZE = 1800;
         const MAP_HALF_SIZE = MAP_SIZE / 2;
-        const MAX_ALT = 150.0;
-        const REEF_FLOOR = -22.0;
+        const MAX_ALT = 190.0;
+        const REEF_FLOOR = -40.0;
         const WATER_SURFACE_Y = MAX_ALT - 8;
         const lakes = [];
 
@@ -488,22 +388,28 @@
         function isOnRoad() { return false; }
 
         function getTerrainHeight(x, z) {
-            const broad = simplex.noise2D(x * 0.0025, z * 0.0025) * 20;
-            const medium = simplex.noise2D(x * 0.009, z * 0.009) * 7;
-            const fine = simplex.noise2D(x * 0.03, z * 0.03) * 2.5;
-            const edgeRise = Math.max(0, (Math.sqrt(x * x + z * z) - 260) * 0.02);
-            return REEF_FLOOR + broad + medium + fine + edgeRise;
+            const broad = simplex.noise2D(x * 0.0018, z * 0.0018) * 26;
+            const medium = simplex.noise2D(x * 0.006, z * 0.006) * 10;
+            const fine = simplex.noise2D(x * 0.028, z * 0.028) * 2.2;
+            const ridge = Math.sin(x * 0.0017 + z * 0.0022) * 8;
+
+            const trench1 = -42 * Math.exp(-((x + 260) ** 2) / 90000 - ((z - 180) ** 2) / 260000);
+            const trench2 = -35 * Math.exp(-((x - 420) ** 2) / 130000 - ((z + 260) ** 2) / 110000);
+            const crack = -24 * Math.exp(-((z + 0.28 * x - 120) ** 2) / 2800);
+            const escarp = Math.max(0, (Math.sqrt(x * x + z * z) - 520) * 0.03);
+
+            return REEF_FLOOR + broad + medium + fine + ridge + trench1 + trench2 + crack + escarp;
         }
 
         // --- Seabed ---
         const planeSize = MAP_SIZE;
-        const vertexCount = 220;
+        const vertexCount = 420;
         const geometry = new THREE.PlaneGeometry(planeSize, planeSize, vertexCount, vertexCount);
         geometry.rotateX(-Math.PI / 2);
         const positions = geometry.attributes.position;
         const colors = [];
-        const cDeep = new THREE.Color(0x0d3342);
-        const cShallow = new THREE.Color(0x3e7a7e);
+        const cDeep = new THREE.Color(0x082733);
+        const cShallow = new THREE.Color(0x4f7f79);
         for (let i = 0; i < positions.count; i++) {
             const x = positions.getX(i);
             const z = positions.getZ(i);
@@ -520,7 +426,7 @@
         scene.add(ground);
 
         // --- Water Surface Detail ---
-        const waterGeo = new THREE.PlaneGeometry(MAP_SIZE * 1.04, MAP_SIZE * 1.04, 140, 140);
+        const waterGeo = new THREE.PlaneGeometry(MAP_SIZE * 1.04, MAP_SIZE * 1.04, 200, 200);
         waterGeo.rotateX(-Math.PI / 2);
         const waterPos = waterGeo.attributes.position;
         const waterBase = Float32Array.from(waterPos.array);
@@ -535,16 +441,16 @@
                 roughness: 0.16,
                 transmission: 0.72,
                 transparent: true,
-                opacity: 0.34,
+                opacity: 0.42,
                 depthWrite: false
             })
         );
         scene.add(waterSurface);
 
         // --- Reef Obstacles ---
-        const boxGeo = new THREE.CylinderGeometry(0.8, 1.4, 1.0, 7);
+        const boxGeo = new THREE.CylinderGeometry(0.8, 1.6, 1.0, 8);
         boxGeo.translate(0, 0.5, 0);
-        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x6b5a8f, roughness: 0.92, flatShading: true });
+        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x5f6366, roughness: 0.95, flatShading: true });
         const buildingsMesh = new THREE.InstancedMesh(boxGeo, buildingMat, 2400);
         buildingsMesh.castShadow = true;
         buildingsMesh.receiveShadow = true;
@@ -555,14 +461,15 @@
             worldState.mountainBuildings = [];
             worldState.cabinPositions = [];
             let attempts = 0;
-            while (worldState.mountainBuildings.length < 900 && attempts < 25000) {
+            while (worldState.mountainBuildings.length < 1300 && attempts < 42000) {
                 attempts++;
-                const x = (random() - 0.5) * 900;
-                const z = (random() - 0.5) * 900;
+                const x = (random() - 0.5) * 1500;
+                const z = (random() - 0.5) * 1500;
                 const y = getTerrainHeight(x, z);
-                if (y < REEF_FLOOR - 8 || y > 30) continue;
-                const radius = 2 + random() * 4;
-                const height = 3 + random() * 12;
+                if (y < REEF_FLOOR - 12 || y > 48) continue;
+                const clusterBoost = Math.max(0, Math.sin(x * 0.006) * Math.cos(z * 0.004));
+                const radius = 2.2 + random() * 6.2 + clusterBoost * 6;
+                const height = 3 + random() * 18 + clusterBoost * 10;
                 const reef = { x, z, halfWidth: radius, halfDepth: radius, baseHeight: y - 0.5, height: y + height };
                 worldState.mountainBuildings.push(reef);
                 worldState.cabinPositions.push({ x, z, r: radius + 3 });
@@ -592,18 +499,20 @@
         const grassGeo = new THREE.CylinderGeometry(0.15, 0.42, 4.2, 6);
         grassGeo.translate(0, 2.1, 0);
         const grassMat = new THREE.MeshStandardMaterial({ color: 0x2fa36f, roughness: 0.95, flatShading: true });
-        const grassMesh = new THREE.InstancedMesh(grassGeo, grassMat, 6000);
+        const grassMesh = new THREE.InstancedMesh(grassGeo, grassMat, 12000);
         grassMesh.castShadow = false;
         let gCount = 0;
         let attempts = 0;
-        while (gCount < 5200 && attempts < 45000) {
+        while (gCount < 10200 && attempts < 90000) {
             attempts++;
-            const x = (random() - 0.5) * 980;
-            const z = (random() - 0.5) * 980;
+            const x = (random() - 0.5) * 1700;
+            const z = (random() - 0.5) * 1700;
             const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 4 || h > 20) continue;
+            if (h < REEF_FLOOR - 8 || h > 34) continue;
+            const patch = 0.6 + 0.5 * (Math.sin((x + 240) * 0.008) * Math.cos((z - 80) * 0.006) + 1);
+            if (random() > Math.min(1.0, patch)) continue;
             dummy.position.set(x, h, z);
-            const s = 0.6 + random() * 1.1;
+            const s = 0.65 + random() * (1.6 + patch * 0.9);
             dummy.scale.set(0.7 * s, 0.9 + s, 0.7 * s);
             dummy.rotation.set(0, random() * Math.PI, (random() - 0.5) * 0.25);
             dummy.updateMatrix();
@@ -615,17 +524,18 @@
         // --- Coral ---
         const coralGeo = new THREE.DodecahedronGeometry(1.2, 0);
         const coralMat = new THREE.MeshStandardMaterial({ color: 0xbf7a5d, roughness: 0.82, flatShading: true });
-        const coralMesh = new THREE.InstancedMesh(coralGeo, coralMat, 1200);
+        const coralMesh = new THREE.InstancedMesh(coralGeo, coralMat, 2400);
         let cCount = 0;
         attempts = 0;
-        while (cCount < 900 && attempts < 20000) {
+        while (cCount < 1800 && attempts < 50000) {
             attempts++;
-            const x = (random() - 0.5) * 920;
-            const z = (random() - 0.5) * 920;
+            const x = (random() - 0.5) * 1680;
+            const z = (random() - 0.5) * 1680;
             const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 2 || h > 24) continue;
+            if (h < REEF_FLOOR - 6 || h > 34) continue;
             dummy.position.set(x, h + 0.6, z);
-            const s = 1.0 + random() * 2.2;
+            const patch = 0.6 + 0.5 * (Math.cos((x - 380) * 0.006) * Math.sin((z + 220) * 0.008) + 1);
+            const s = 0.9 + random() * 2.4 + patch * 1.2;
             dummy.scale.set(s, s * (0.7 + random() * 0.4), s);
             dummy.rotation.set(random(), random() * Math.PI, random());
             dummy.updateMatrix();
@@ -635,15 +545,15 @@
         scene.add(coralMesh);
 
         // --- Current Particles ---
-        const particleCount = 2400;
+        const particleCount = 4600;
         const particleGeo = new THREE.BufferGeometry();
         const pPositions = new Float32Array(particleCount * 3);
         const pVelocities = [];
         for (let i = 0; i < particleCount; i++) {
-            pPositions[i * 3] = (Math.random() - 0.5) * 460;
+            pPositions[i * 3] = (Math.random() - 0.5) * (MAP_SIZE * 0.95);
             pPositions[i * 3 + 1] = Math.random() * (MAX_ALT - REEF_FLOOR) + REEF_FLOOR;
-            pPositions[i * 3 + 2] = (Math.random() - 0.5) * 460;
-            pVelocities.push(0.4 + Math.random() * 1.1);
+            pPositions[i * 3 + 2] = (Math.random() - 0.5) * (MAP_SIZE * 0.95);
+            pVelocities.push(0.45 + Math.random() * 1.6);
         }
         particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
         const windParticles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0x8ce9ff, size: 0.9, transparent: true, opacity: 0.5, sizeAttenuation: true }));
@@ -651,61 +561,84 @@
 
         document.getElementById('obs-count').innerText = worldState.buildingColliders.length + " Objects";
 
-        // --- Users & Labels ---
+        // --- Pollution Targets & Labels ---
         const labelContainer = document.getElementById('labels-container');
         const userListUi = document.getElementById('user-list');
         const labelObjs = [];
         const userElements = [];
-
-        // Generate or Load Users
-        function getSurfacePoint(b){
-            const isRoof=random()<0.3;
-            if(isRoof) return new THREE.Vector3(b.x,b.height+0.5,b.z);
-            else{
-                const s=Math.floor(random()*4);
-                let wx=b.x,wy=b.height,wz=b.z;
-                const base=b.baseHeight||0;
-                wy=base+(b.height-base)*(0.2+random()*0.7);
-                const o=0.5;
-                switch(s){
-                    case 0:wz+=b.halfDepth+o;wx+=(random()-0.5)*b.halfWidth;break;
-                    case 1:wz-=b.halfDepth+o;wx+=(random()-0.5)*b.halfWidth;break;
-                    case 2:wx+=b.halfWidth+o;wz+=(random()-0.5)*b.halfDepth;break;
-                    case 3:wx-=b.halfWidth+o;wz+=(random()-0.5)*b.halfDepth;break;
+        const pollutionTargets = [];
+        function createPollutionMarker(target) {
+            const group = new THREE.Group();
+            if (target.kind === 'BARREL') {
+                const barrel = new THREE.Mesh(
+                    new THREE.CylinderGeometry(1.0, 1.0, 2.2, 18),
+                    new THREE.MeshStandardMaterial({ color: 0x6f5329, roughness: 0.8, metalness: 0.25 })
+                );
+                group.add(barrel);
+                const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.08, 8, 18), new THREE.MeshStandardMaterial({ color: 0x2f3235 }));
+                ring1.position.y = 0.76;
+                ring1.rotation.x = Math.PI / 2;
+                group.add(ring1);
+                const ring2 = ring1.clone();
+                ring2.position.y = -0.76;
+                group.add(ring2);
+                const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({ color: 0xf3d24a, side: THREE.DoubleSide }));
+                sign.position.set(0, 0.2, 1.03);
+                group.add(sign);
+                const hazard = new THREE.Mesh(new THREE.RingGeometry(0.14, 0.28, 3), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide }));
+                hazard.position.copy(sign.position.clone().add(new THREE.Vector3(0, 0.0, 0.02)));
+                hazard.rotation.z = Math.PI / 6;
+                group.add(hazard);
+            } else {
+                const clusterMat = new THREE.MeshStandardMaterial({ color: 0xb8b4a4, roughness: 0.86 });
+                for (let i = 0; i < 9; i++) {
+                    const part = new THREE.Mesh(
+                        i % 2 === 0 ? new THREE.BoxGeometry(0.6 + random() * 0.8, 0.2 + random() * 0.26, 0.5 + random() * 0.8) : new THREE.SphereGeometry(0.26 + random() * 0.24, 8, 8),
+                        clusterMat
+                    );
+                    part.position.set((random() - 0.5) * 2.6, (random() - 0.5) * 0.22, (random() - 0.5) * 2.6);
+                    part.rotation.set(random(), random(), random());
+                    group.add(part);
                 }
-                return new THREE.Vector3(wx,wy,wz);
             }
+            group.position.copy(target.pos);
+            scene.add(group);
+            target.mesh = group;
         }
 
-        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length === 0) {
+        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length !== 8) {
             worldState.finalUsers = [];
-            const candidates = Array.isArray(worldState.mountainBuildings) ? worldState.mountainBuildings.slice() : [];
-            candidates.sort(() => random() - 0.5);
-            for (let i = 0; i < 6 && i < candidates.length; i++) worldState.finalUsers.push(getSurfacePoint(candidates[i]));
-            if (worldState.finalUsers.length < 6) {
-                while (worldState.finalUsers.length < 6) {
-                    const x = (random() - 0.5) * 680;
-                    const z = (random() - 0.5) * 680;
-                    worldState.finalUsers.push(new THREE.Vector3(x, getTerrainHeight(x, z) + 2.0, z));
-                }
+            for (let i = 0; i < 5; i++) {
+                const x = (random() - 0.5) * (MAP_SIZE * 0.8);
+                const z = (random() - 0.5) * (MAP_SIZE * 0.8);
+                worldState.finalUsers.push({ x, y: getTerrainHeight(x, z) + 1.3 + random() * 2.4, z, kind: 'BARREL' });
+            }
+            for (let i = 0; i < 3; i++) {
+                const x = (random() - 0.5) * (MAP_SIZE * 0.72);
+                const z = (random() - 0.5) * (MAP_SIZE * 0.72);
+                worldState.finalUsers.push({ x, y: WATER_SURFACE_Y + random() * 0.9, z, kind: 'SURFACE_CLUSTER', phase: random() * Math.PI * 2 });
             }
             localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(worldState));
         }
 
-        // Create Labels for Users
-        worldState.finalUsers.forEach((p,i)=>{
-            const id=`USER_${i+1}`; 
-            const d=document.createElement('div'); 
-            d.className='floating-label'; d.innerText=id; 
-            labelContainer.appendChild(d); 
-            labelObjs.push({id,pos:new THREE.Vector3(p.x,p.y,p.z),el:d});
-            
-            const r=document.createElement('div'); r.className='user-coord-row'; 
+        worldState.finalUsers.forEach((p, i) => {
+            const kind = p.kind || (i < 5 ? 'BARREL' : 'SURFACE_CLUSTER');
+            const id = kind === 'SURFACE_CLUSTER' ? `POLLUTION_CLUSTER_${i + 1}` : `WASTE_BARREL_${i + 1}`;
+            const target = { id, kind, phase: p.phase || random() * Math.PI * 2, pos: new THREE.Vector3(p.x, p.y, p.z) };
+            createPollutionMarker(target);
+            pollutionTargets.push(target);
+            const d = document.createElement('div');
+            d.className='floating-label';
+            d.innerText=id;
+            labelContainer.appendChild(d);
+            labelObjs.push({id,pos:target.pos,el:d,target});
+
+            const r=document.createElement('div'); r.className='user-coord-row';
             const coordSpan = document.createElement('span');
             r.appendChild(coordSpan);
-            coordSpan.innerHTML = `${id} [${p.x.toFixed(0)},${p.y.toFixed(0)},${p.z.toFixed(0)}]`;
+            coordSpan.innerHTML = `${id} [${target.pos.x.toFixed(0)},${target.pos.y.toFixed(0)},${target.pos.z.toFixed(0)}]`;
             userListUi.appendChild(r);
-            userElements.push({row: r, coordSpan, pos: new THREE.Vector3(p.x, p.y, p.z)});
+            userElements.push({row: r, coordSpan, target});
         });
 
         
@@ -723,118 +656,90 @@
              const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData));
              const downloadAnchorNode = document.createElement('a');
              downloadAnchorNode.setAttribute("href", dataStr);
-             downloadAnchorNode.setAttribute("download", "drone_path_data.json");
+             downloadAnchorNode.setAttribute("download", "oneocean_task_data.json");
              document.body.appendChild(downloadAnchorNode); 
              downloadAnchorNode.click();
              downloadAnchorNode.remove();
         };
 
-
-        // Helper for Signal (using same logic as index.html)
-        function checkLineOfSight(dronePos, userPos) {
-            const direction = new THREE.Vector3().subVectors(userPos, dronePos);
-            const distance = direction.length();
-            direction.normalize();
-            
-            const sampleInterval = 2.0;
-            const samples = Math.floor(distance / sampleInterval) + 1;
-            let obstacleDistance = 0;
-            
-            for (let i = 1; i < samples; i++) {
-                const t = i / samples;
-                const checkPos = new THREE.Vector3().lerpVectors(dronePos, userPos, t);
-                
-                const terrainH = getTerrainHeight(checkPos.x, checkPos.z);
-                if (checkPos.y < terrainH + 1.5) {
-                    obstacleDistance += sampleInterval;
-                    continue;
-                }
-                
-                for (let b of worldState.buildingColliders) {
-                    const dx = Math.abs(checkPos.x - b.x);
-                    const dz = Math.abs(checkPos.z - b.z);
-                    const inX = dx < b.halfWidth + 2;
-                    const inZ = dz < b.halfDepth + 2;
-                    const inY = checkPos.y < (b.height + 1);
-                    
-                    if (inX && inZ && inY) {
-                        obstacleDistance += sampleInterval;
-                        break;
-                    }
-                }
-            }
-            
-            const totalPathLength = distance;
-            const clearRatio = Math.max(0, 1 - (obstacleDistance / totalPathLength));
-            
-            return { obstacles: obstacleDistance, samples, clearRatio };
-        }
-
-        function calculateSignalStrength(distance, clearRatio) {
-            const minDistance = 1.0;
-            const safeDistance = Math.max(distance, minDistance);
-            
-            let distanceSignal = 1.0;
-            if (safeDistance < 50) {
-                distanceSignal = 0.90 + 0.08 * (1 - safeDistance / 50);
-            } else if (safeDistance < 200) {
-                distanceSignal = 0.65 + 0.25 * (1 - (safeDistance - 50) / 150);
-            } else if (safeDistance < 500) {
-                distanceSignal = 0.35 + 0.30 * (1 - (safeDistance - 200) / 300);
-            } else {
-                distanceSignal = Math.max(0, 0.35 * (1 - (safeDistance - 500) / 500));
-            }
-            
-            const obstaclePenalty = (1 - clearRatio) * 0.70;
-            const finalSignal = distanceSignal * (1 - obstaclePenalty);
-            
-            const signalPercent = Math.max(0, Math.min(100, finalSignal * 100));
-            const signalStrength = -30 - (1 - finalSignal) * 60;
-            
-            return {
-                signalStrength: signalStrength.toFixed(1),
-                signalPercent: signalPercent.toFixed(0),
-                quality: signalPercent > 70 ? 'EXCELLENT' : signalPercent > 50 ? 'GOOD' : signalPercent > 30 ? 'FAIR' : signalPercent > 10 ? 'POOR' : 'NONE'
-            };
-        }
-
-        function checkSignal(dronePos, targetPos) {
-            const dist = dronePos.distanceTo(targetPos);
-            const los = checkLineOfSight(dronePos, targetPos);
-            const signal = calculateSignalStrength(dist, los.clearRatio);
-            
-            const qualityColor = signal.quality === 'EXCELLENT' ? '#388e3c' : 
-                                signal.quality === 'GOOD' ? '#689f38' :
-                                signal.quality === 'FAIR' ? '#f57c00' :
-                                signal.quality === 'POOR' ? '#d32f2f' : '#757575';
-            
-            return { 
-                dbm: signal.signalStrength, 
-                qual: signal.quality, 
-                color: qualityColor, 
-                dist: dist.toFixed(0),
-                signalPercent: signal.signalPercent
-            };
+        function distanceToTarget(dronePos, targetPos) {
+            return dronePos.distanceTo(targetPos);
         }
 
         // Player UUV
         const playerDrone = new THREE.Group();
-        const playerHullMat = new THREE.MeshStandardMaterial({ color: 0x214353, roughness: 0.55, metalness: 0.18 });
-        const playerHull = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.2, 8, 22), playerHullMat);
+        const playerHullMat = new THREE.MeshStandardMaterial({ color: 0x223f50, roughness: 0.52, metalness: 0.22 });
+        const playerHull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), playerHullMat);
         playerHull.rotation.x = Math.PI / 2;
         playerDrone.add(playerHull);
-        const playerNose = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 12), playerHullMat);
-        playerNose.position.z = -4.0;
+        const playerNose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), playerHullMat);
+        playerNose.position.z = -4.9;
         playerDrone.add(playerNose);
-        const playerTail = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.8, 16), playerHullMat);
+        const playerTail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), playerHullMat);
         playerTail.rotation.x = -Math.PI / 2;
-        playerTail.position.z = 4.6;
+        playerTail.position.z = 5.35;
         playerDrone.add(playerTail);
-        const playerFinMat = new THREE.MeshStandardMaterial({ color: 0x2a5f76, roughness: 0.6 });
-        const pFinTop = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.1, 1.4), playerFinMat); pFinTop.position.set(0, 1.0, 2.0); playerDrone.add(pFinTop);
-        const pFinLeft = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.14, 1.2), playerFinMat); pFinLeft.position.set(-0.95, 0.0, 2.2); pFinLeft.rotation.z = 0.22; playerDrone.add(pFinLeft);
-        const pFinRight = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.14, 1.2), playerFinMat); pFinRight.position.set(0.95, 0.0, 2.2); pFinRight.rotation.z = -0.22; playerDrone.add(pFinRight);
-        playerDrone.scale.set(0.32, 0.32, 0.32);
+        const playerBand = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
+        playerBand.rotation.x = Math.PI / 2;
+        playerBand.position.z = -0.3;
+        playerDrone.add(playerBand);
+        const playerFinMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
+        const pFinTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), playerFinMat); pFinTop.position.set(0, 1.16, 2.45); playerDrone.add(pFinTop);
+        const pFinBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), playerFinMat); pFinBottom.position.set(0, -1.02, 2.75); playerDrone.add(pFinBottom);
+        const pFinLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), playerFinMat); pFinLeft.position.set(-1.12, 0.02, 2.55); pFinLeft.rotation.z = 0.2; playerDrone.add(pFinLeft);
+        const pFinRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), playerFinMat); pFinRight.position.set(1.12, 0.02, 2.55); pFinRight.rotation.z = -0.2; playerDrone.add(pFinRight);
+        const playerPropMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
+        const playerDuctMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
+        const playerStrutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
+        const playerPropGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
+        const playerPropPositions = [
+            { x: -1.55, y: 0.95, z: 3.15 },
+            { x: 1.55, y: 0.95, z: 3.15 },
+            { x: -1.55, y: -0.95, z: 3.15 },
+            { x: 1.55, y: -0.95, z: 3.15 }
+        ];
+        const playerProps = [];
+        playerPropPositions.forEach(pos => {
+            const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), playerStrutMat);
+            strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
+            strut.rotation.z = Math.atan2(pos.x, 1.8);
+            playerDrone.add(strut);
+            const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), playerDuctMat);
+            duct.position.set(pos.x, pos.y, pos.z);
+            duct.rotation.x = Math.PI / 2;
+            playerDrone.add(duct);
+            const p = new THREE.Mesh(playerPropGeo, playerPropMat);
+            p.position.set(pos.x, pos.y, pos.z);
+            p.rotation.x = Math.PI / 2;
+            playerDrone.add(p);
+            playerProps.push(p);
+        });
+        const playerTrailFront = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.2, 16), new THREE.MeshBasicMaterial({ color: 0x7ddaff, transparent: true, opacity: 0.0, depthWrite: false }));
+        playerTrailFront.position.set(0, 0, -6.1);
+        playerTrailFront.rotation.x = Math.PI / 2;
+        playerDrone.add(playerTrailFront);
+        const playerTrailTail = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.8, 16), new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.0, depthWrite: false }));
+        playerTrailTail.position.set(0, 0, 6.8);
+        playerTrailTail.rotation.x = -Math.PI / 2;
+        playerDrone.add(playerTrailTail);
+        const playerFrontLight = new THREE.SpotLight(0xb9f0ff, 1.45, 220, Math.PI / 7, 0.55, 1.6);
+        playerFrontLight.position.set(0, 0.35, -4.7);
+        playerFrontLight.target.position.set(0, 0.2, -34);
+        playerFrontLight.castShadow = false;
+        playerDrone.add(playerFrontLight);
+        playerDrone.add(playerFrontLight.target);
+        const playerDownLight = new THREE.SpotLight(0x8dd9ff, 1.1, 150, Math.PI / 5, 0.65, 1.5);
+        playerDownLight.position.set(0, -0.45, -1.1);
+        playerDownLight.target.position.set(0, -24, -1.1);
+        playerDownLight.castShadow = false;
+        playerDrone.add(playerDownLight);
+        playerDrone.add(playerDownLight.target);
+        playerDrone.userData.props = playerProps;
+        playerDrone.userData.noseTrail = playerTrailFront;
+        playerDrone.userData.tailTrail = playerTrailTail;
+        playerDrone.userData.frontLight = playerFrontLight;
+        playerDrone.userData.downLight = playerDownLight;
+        playerDrone.scale.set(0.38, 0.38, 0.38);
         playerDrone.position.set(0, 100, 0);
         scene.add(playerDrone);
 
@@ -967,41 +872,82 @@
         // Create UUV model (same style as index.html)
         function createDroneModel(color) {
             const droneGroup = new THREE.Group();
-            const bodyMat = new THREE.MeshStandardMaterial({ color: color || 0x214353, roughness: 0.55, metalness: 0.18 });
-            const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.2, 8, 22), bodyMat);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: color || 0x223f50, roughness: 0.52, metalness: 0.22 });
+            const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), bodyMat);
             hull.rotation.x = Math.PI / 2;
             droneGroup.add(hull);
-            const nose = new THREE.Mesh(new THREE.SphereGeometry(1.05, 16, 12), bodyMat);
-            nose.position.z = -4.0;
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), bodyMat);
+            nose.position.z = -4.9;
             droneGroup.add(nose);
-            const tail = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.8, 16), bodyMat);
+            const tail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), bodyMat);
             tail.rotation.x = -Math.PI / 2;
-            tail.position.z = 4.6;
+            tail.position.z = 5.35;
             droneGroup.add(tail);
-            const finMat = new THREE.MeshStandardMaterial({ color: 0x2a5f76, roughness: 0.6 });
-            const finTop = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.1, 1.4), finMat); finTop.position.set(0, 1.0, 2.0); droneGroup.add(finTop);
-            const finLeft = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.14, 1.2), finMat); finLeft.position.set(-0.95, 0.0, 2.2); finLeft.rotation.z = 0.22; droneGroup.add(finLeft);
-            const finRight = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.14, 1.2), finMat); finRight.position.set(0.95, 0.0, 2.2); finRight.rotation.z = -0.22; droneGroup.add(finRight);
-            const propGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.06, 10);
-            const propMat = new THREE.MeshBasicMaterial({ color: 0x2c2c2c, transparent: true, opacity: 0.85 });
+            const band = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
+            band.rotation.x = Math.PI / 2;
+            band.position.z = -0.3;
+            droneGroup.add(band);
+            const finMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
+            const finTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), finMat); finTop.position.set(0, 1.16, 2.45); droneGroup.add(finTop);
+            const finBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), finMat); finBottom.position.set(0, -1.02, 2.75); droneGroup.add(finBottom);
+            const finLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finLeft.position.set(-1.12, 0.02, 2.55); finLeft.rotation.z = 0.2; droneGroup.add(finLeft);
+            const finRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finRight.position.set(1.12, 0.02, 2.55); finRight.rotation.z = -0.2; droneGroup.add(finRight);
+            const propGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
+            const propMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
+            const ductMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
+            const strutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
             const propPositions = [
-                { x: -1.0, y: 0.75, z: 3.4 },
-                { x: 1.0, y: 0.75, z: 3.4 },
-                { x: -1.0, y: -0.75, z: 3.4 },
-                { x: 1.0, y: -0.75, z: 3.4 }
+                { x: -1.55, y: 0.95, z: 3.15 },
+                { x: 1.55, y: 0.95, z: 3.15 },
+                { x: -1.55, y: -0.95, z: 3.15 },
+                { x: 1.55, y: -0.95, z: 3.15 }
             ];
+            const props = [];
             propPositions.forEach(pos => {
+                const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), strutMat);
+                strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
+                strut.rotation.z = Math.atan2(pos.x, 1.8);
+                droneGroup.add(strut);
+                const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), ductMat);
+                duct.position.set(pos.x, pos.y, pos.z);
+                duct.rotation.x = Math.PI / 2;
+                droneGroup.add(duct);
                 const p = new THREE.Mesh(propGeo, propMat);
                 p.position.set(pos.x, pos.y, pos.z);
                 p.rotation.x = Math.PI / 2;
-                p.add(new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.03, 8, 22), new THREE.MeshBasicMaterial({ color: 0x141414 })).rotateX(Math.PI / 2));
                 droneGroup.add(p);
+                props.push(p);
             });
             
             droneGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 4, 0xff0000));
             droneGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 4, 0x00ff00));
             droneGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), 4, 0x0000ff));
-            droneGroup.scale.set(0.32, 0.32, 0.32);
+            const trailFront = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.2, 16), new THREE.MeshBasicMaterial({ color: 0x7ddaff, transparent: true, opacity: 0.0, depthWrite: false }));
+            trailFront.position.set(0, 0, -6.1);
+            trailFront.rotation.x = Math.PI / 2;
+            droneGroup.add(trailFront);
+            const trailTail = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.8, 16), new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.0, depthWrite: false }));
+            trailTail.position.set(0, 0, 6.8);
+            trailTail.rotation.x = -Math.PI / 2;
+            droneGroup.add(trailTail);
+            const frontLight = new THREE.SpotLight(0xb9f0ff, 1.15, 170, Math.PI / 7, 0.55, 1.6);
+            frontLight.position.set(0, 0.35, -4.7);
+            frontLight.target.position.set(0, 0.2, -28);
+            frontLight.castShadow = false;
+            droneGroup.add(frontLight);
+            droneGroup.add(frontLight.target);
+            const downLight = new THREE.SpotLight(0x8dd9ff, 0.85, 120, Math.PI / 5, 0.65, 1.5);
+            downLight.position.set(0, -0.45, -1.1);
+            downLight.target.position.set(0, -20, -1.1);
+            downLight.castShadow = false;
+            droneGroup.add(downLight);
+            droneGroup.add(downLight.target);
+            droneGroup.userData.props = props;
+            droneGroup.userData.noseTrail = trailFront;
+            droneGroup.userData.tailTrail = trailTail;
+            droneGroup.userData.frontLight = frontLight;
+            droneGroup.userData.downLight = downLight;
+            droneGroup.scale.set(0.38, 0.38, 0.38);
 
             // Add high-contrast wireframe box for visibility
             const boundsGeo = new THREE.BoxGeometry(5, 2, 5); // Slightly larger than drone
@@ -1231,12 +1177,12 @@
             return c;
         }
 
-        // Exp 1: ATC
+        // Task 1: Inspection
         function setupATC(mode) {
             resetSim(); appMode = (mode==='FLY'?'ATC_FLY':'ATC_STATIC'); playerDrone.visible=false;
-            document.getElementById('mode-val').innerText = `ATC (${mode})`;
+            document.getElementById('mode-val').innerText = `INSPECTION (${mode})`;
             document.getElementById('legend-box').style.display='block';
-            document.getElementById('legend-content').innerHTML = `<div class="legend-item"><div class="legend-color" style="background:#0088ff"></div>FEAR-PID</div><div class="legend-item"><div class="legend-color" style="background:#ff0000"></div>PID</div>`;
+            document.getElementById('legend-content').innerHTML = `<div class="legend-item"><div class="legend-color" style="background:#0088ff"></div>Optimized</div><div class="legend-item"><div class="legend-color" style="background:#ff0000"></div>Baseline</div>`;
             
             // Update button active states
             document.getElementById('btn-atc-fly').classList.toggle('active', mode==='FLY');
@@ -1251,36 +1197,36 @@
             let cF, cP;
             
             // Try to load paths from experiments data first
-            const pidExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'PID') : null;
-            const fearExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'FEAR-PID') : null;
+            const baselineExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'INSPECT_BASELINE') : null;
+            const optimizedExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'INSPECT_OPTIMIZED') : null;
             
-            if (pidExp && fearExp && pidExp.paths && fearExp.paths) {
-                console.log("Using pre-calculated ATC paths from JSON (Multi-path)");
+            if (baselineExp && optimizedExp && baselineExp.paths && optimizedExp.paths) {
+                console.log("Using pre-calculated inspection paths from data (multi-path)");
                 
-                // PID Paths (Red)
-                pidExp.paths.forEach((pathPoints, idx) => {
+                // Baseline Paths (Red)
+                baselineExp.paths.forEach((pathPoints, idx) => {
                     const pts = smoothDisplayPoints(pathPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                     const c = new THREE.CatmullRomCurve3(pts);
                     createTube(c, 0xff0000, 0.6, 0.15);
                     if (idx === 0) cP = c;
                 });
 
-                // FEAR-PID Paths (Blue)
-                fearExp.paths.forEach((pathPoints, idx) => {
+                // Optimized Paths (Blue)
+                optimizedExp.paths.forEach((pathPoints, idx) => {
                     const pts = smoothDisplayPoints(pathPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                     const c = new THREE.CatmullRomCurve3(pts);
                     createTube(c, 0x0088ff, 0.6, 0.15);
                     if (idx === 0) cF = c;
                 });
-            } else if (pidExp && fearExp && pidExp.points && fearExp.points) {
-                console.log("Using pre-calculated ATC paths from JSON (Single-path)");
-                const ptsP = smoothDisplayPoints(pidExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                const ptsF = smoothDisplayPoints(fearExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
+            } else if (baselineExp && optimizedExp && baselineExp.points && optimizedExp.points) {
+                console.log("Using pre-calculated inspection paths from data (single-path)");
+                const ptsP = smoothDisplayPoints(baselineExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
+                const ptsF = smoothDisplayPoints(optimizedExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                 cP = new THREE.CatmullRomCurve3(ptsP);
                 cF = new THREE.CatmullRomCurve3(ptsF);
                 createTube(cF,0x0088ff); createTube(cP,0xff0000);
             } else {
-                console.log("Generating ATC paths on the fly");
+                console.log("Generating inspection paths on the fly");
                 const baseC = genPath(waypoints, 'ACS-DS'); const clean = smoothDisplayPoints(baseC.getPoints(300));
                 const noisy = clean.map((p,i)=> {
                     const np=p.clone(); if(i>20&&i<280){ np.y+=Math.sin(i*0.1)*8; np.x+=Math.sin(i*0.05)*12; } return np;
@@ -1293,7 +1239,7 @@
             if (pathData.userHoverMarkers && pathData.userHoverMarkers.length > 0) {
                 pathData.userHoverMarkers.forEach(marker => {
                     const pos = new THREE.Vector3(marker.x, marker.y, marker.z);
-                    addMarker(pos, 0xffaa00); // No text for user hover points
+                    addMarker(pos, 0x1d9bd1); // No text for user hover points
                 });
             }
 
@@ -1309,12 +1255,12 @@
             }
         }
 
-        // Exp 2: Path
+        // Task 2: Cleanup
         function setupPath(mode) {
             resetSim(); appMode = (mode==='FLY'?'PATH_FLY':'PATH_STATIC'); playerDrone.visible=false;
-            document.getElementById('mode-val').innerText = `PATH (${mode})`;
+            document.getElementById('mode-val').innerText = `CLEANUP (${mode})`;
             document.getElementById('legend-box').style.display='block';
-            document.getElementById('legend-content').innerHTML = `<div class="legend-item"><div class="legend-color" style="background:#ffff00"></div>ACS</div><div class="legend-item"><div class="legend-color" style="background:#00ff00"></div>TD3</div><div class="legend-item"><div class="legend-color" style="background:#0088ff"></div>ACS-DS</div>`;
+            document.getElementById('legend-content').innerHTML = `<div class="legend-item"><div class="legend-color" style="background:#ffff00"></div>Sweep</div><div class="legend-item"><div class="legend-color" style="background:#00ff00"></div>Patrol</div><div class="legend-item"><div class="legend-color" style="background:#0088ff"></div>Coverage</div>`;
 
             // Update button active states
             document.getElementById('btn-path-fly').classList.toggle('active', mode==='FLY');
@@ -1329,47 +1275,47 @@
             let c1, c2, c3;
             
             // Try to load paths from experiments data first
-            const acsExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'ACS') : null;
-            const td3Exp = pathData.experiments ? pathData.experiments.find(e => e.name === 'TD3') : null;
-            const acsDsExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'ACS-DS') : null;
+            const sweepExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'CLEANUP_SWEEP') : null;
+            const patrolExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'CLEANUP_PATROL') : null;
+            const coverageExp = pathData.experiments ? pathData.experiments.find(e => e.name === 'CLEANUP_COVERAGE') : null;
             
-            if (acsExp && td3Exp && acsDsExp && acsExp.paths) {
-                console.log("Using pre-calculated Path Planning paths from JSON (Multi-path)");
+            if (sweepExp && patrolExp && coverageExp && sweepExp.paths) {
+                console.log("Using pre-calculated cleanup paths from data (multi-path)");
                 
-                 // ACS (Yellow)
-                 acsExp.paths.forEach((pathPoints, idx) => {
+                 // Sweep (Yellow)
+                 sweepExp.paths.forEach((pathPoints, idx) => {
                     const pts = smoothDisplayPoints(pathPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                     const c = new THREE.CatmullRomCurve3(pts);
                     createTube(c, 0xffff00, 0.6, 0.15);
                     if (idx === 0) c1 = c;
                 });
 
-                // TD3 (Green)
-                td3Exp.paths.forEach((pathPoints, idx) => {
+                // Patrol (Green)
+                patrolExp.paths.forEach((pathPoints, idx) => {
                     const pts = smoothDisplayPoints(pathPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                     const c = new THREE.CatmullRomCurve3(pts);
                     createTube(c, 0x00ff00, 0.6, 0.15);
                     if (idx === 0) c2 = c;
                 });
 
-                // ACS-DS (Blue)
-                acsDsExp.paths.forEach((pathPoints, idx) => {
+                // Coverage (Blue)
+                coverageExp.paths.forEach((pathPoints, idx) => {
                     const pts = smoothDisplayPoints(pathPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                     const c = new THREE.CatmullRomCurve3(pts);
                     createTube(c, 0x0088ff, 0.6, 0.15);
                     if (idx === 0) c3 = c;
                 });
-            } else if (acsExp && td3Exp && acsDsExp && acsExp.points) {
-                console.log("Using pre-calculated Path Planning paths from JSON (Single-path)");
-                const pts1 = smoothDisplayPoints(acsExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                const pts2 = smoothDisplayPoints(td3Exp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                const pts3 = smoothDisplayPoints(acsDsExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
+            } else if (sweepExp && patrolExp && coverageExp && sweepExp.points) {
+                console.log("Using pre-calculated cleanup paths from data (single-path)");
+                const pts1 = smoothDisplayPoints(sweepExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
+                const pts2 = smoothDisplayPoints(patrolExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
+                const pts3 = smoothDisplayPoints(coverageExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
                 c1 = new THREE.CatmullRomCurve3(pts1);
                 c2 = new THREE.CatmullRomCurve3(pts2);
                 c3 = new THREE.CatmullRomCurve3(pts3);
                 createTube(c1,0xffff00,0.6); createTube(c2,0x00ff00,0.6); createTube(c3,0x0088ff,0.9);
             } else {
-                console.log("Generating Path Planning paths on the fly");
+                console.log("Generating cleanup paths on the fly");
                 const rawC1 = genPath(waypoints,'ACS'); 
                 const rawC2 = genPath(waypoints,'TD3'); 
                 const rawC3 = genPath(waypoints,'ACS-DS');
@@ -1384,7 +1330,7 @@
             if (pathData.userHoverMarkers && pathData.userHoverMarkers.length > 0) {
                 pathData.userHoverMarkers.forEach(marker => {
                     const pos = new THREE.Vector3(marker.x, marker.y, marker.z);
-                    addMarker(pos, 0xffaa00); // No text for user hover points
+                    addMarker(pos, 0x1d9bd1); // No text for user hover points
                 });
             }
 
@@ -1444,6 +1390,21 @@
                         // Slerp current rotation towards target rotation (factor 0.1 for smoothness)
                         if (!d.m.quaternion) d.m.quaternion = new THREE.Quaternion();
                         d.m.quaternion.slerp(qt, 0.1);
+                        const localForward = direction.clone();
+                        const pseudoSpeed = 34;
+                        if (d.m.userData && d.m.userData.noseTrail) {
+                            d.m.userData.noseTrail.material.opacity = 0.08;
+                            d.m.userData.tailTrail.material.opacity = 0.62;
+                            d.m.userData.noseTrail.scale.setScalar(0.9);
+                            d.m.userData.tailTrail.scale.setScalar(1.25);
+                            d.m.userData.frontLight.intensity = 1.5;
+                            d.m.userData.downLight.intensity = 0.85;
+                        }
+                        if (d.m.userData && Array.isArray(d.m.userData.props)) {
+                            d.m.userData.props.forEach((prop, idx) => {
+                                prop.rotation.y += (0.6 + pseudoSpeed * 0.03) * (idx % 2 === 0 ? 1 : -1);
+                            });
+                        }
                     }
                     
                     if(d.isT) {
@@ -1477,22 +1438,48 @@
                 let va=0; if(keys.ArrowUp)va=15; if(keys.ArrowDown)va=-15;
                 vel.x+=acc.x*dt; vel.z+=acc.z*dt; vel.y+=va*dt; vel.multiplyScalar(0.95);
                 playerDrone.position.add(vel.clone().multiplyScalar(dt));
+                const forwardSpeed = vel.dot(fwd);
+                const sideSpeed = vel.dot(rgt);
+                const targetPitch = THREE.MathUtils.clamp(-forwardSpeed * 0.0042, -0.22, 0.22);
+                const targetRoll = THREE.MathUtils.clamp(-(keys.ArrowLeft ? 0.12 : 0) + (keys.ArrowRight ? 0.12 : 0) - sideSpeed * 0.0012, -0.16, 0.16);
+                playerDrone.rotation.x = THREE.MathUtils.lerp(playerDrone.rotation.x, targetPitch, 0.16);
+                playerDrone.rotation.z = THREE.MathUtils.lerp(playerDrone.rotation.z, targetRoll, 0.16);
                 const minY = getTerrainHeight(playerDrone.position.x, playerDrone.position.z) + 2;
                 if(playerDrone.position.y < minY) playerDrone.position.y = minY;
+                const speedMag = vel.length();
+                const trailPower = Math.min(1, speedMag / 40);
+                playerDrone.userData.noseTrail.material.opacity = Math.max(0, -forwardSpeed / 35) * 0.65;
+                playerDrone.userData.noseTrail.scale.setScalar(0.8 + trailPower * 0.7);
+                playerDrone.userData.tailTrail.material.opacity = Math.max(0, forwardSpeed / 35) * 0.78;
+                playerDrone.userData.tailTrail.scale.setScalar(0.9 + trailPower * 1.1);
+                playerDrone.userData.frontLight.intensity = 0.9 + trailPower * 1.1;
+                playerDrone.userData.downLight.intensity = 0.7 + (1 - Math.max(0, Math.min(1, (playerDrone.position.y - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)))) * 1.05;
+                playerDrone.userData.props.forEach((prop, idx) => {
+                    prop.rotation.y += (0.6 + speedMag * 0.03) * (idx % 2 === 0 ? 1 : -1);
+                });
                 controls.target.copy(playerDrone.position);
                 controls.update();
             } else controls.update();
 
+            let depthReference = playerDrone.position;
+            if (appMode.includes('FLY') && expDrones.length > 0) {
+                const tracked = expDrones.find(d => d.isT) || expDrones[0];
+                if (tracked && tracked.m) depthReference = tracked.m.position;
+            }
+            const depthNorm = Math.max(0, Math.min(1, (depthReference.y - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)));
+            const depthDark = 0.36 + depthNorm * 0.72;
+            hemiLight.intensity = 0.26 + depthDark * 0.58;
+            dirLight.intensity = 0.2 + depthDark * 0.65;
+            scene.fog.density = 0.0016 + (1 - depthNorm) * 0.0013;
+
             // Wind & Particles Update
             const wind = getWindAt(playerDrone.position, time);
 
-            const cPos=camera.position; const parr=windParticles.geometry.attributes.position.array;
+            const parr=windParticles.geometry.attributes.position.array;
             for(let i=0;i<particleCount;i++){
                 let px=parr[i*3],py=parr[i*3+1],pz=parr[i*3+2];
                 const pw=getWindAt(new THREE.Vector3(px,py,pz),time); const sm=pVelocities[i];
-                px+=pw.x*dt*sm*2; py+=pw.y*dt*sm; pz+=pw.z*dt*sm*2;
-                if(px>cPos.x+200)px-=400; if(px<cPos.x-200)px+=400;
-                if(pz>cPos.z+200)pz-=400; if(pz<cPos.z-200)pz+=400;
+                px+=pw.x*dt*sm*1.6; py+=pw.y*dt*sm*0.65; pz+=pw.z*dt*sm*1.6;
                 if(py<REEF_FLOOR)py+=MAX_ALT-REEF_FLOOR; if(py>MAX_ALT)py-=MAX_ALT-REEF_FLOOR;
                 if(Math.abs(px)>MAP_HALF_SIZE)px=-px; if(Math.abs(pz)>MAP_HALF_SIZE)pz=-pz;
                 parr[i*3]=px; parr[i*3+1]=py; parr[i*3+2]=pz;
@@ -1500,6 +1487,16 @@
             windParticles.geometry.attributes.position.needsUpdate=true;
 
             // Labels Update
+            pollutionTargets.forEach(target => {
+                if (target.kind === 'SURFACE_CLUSTER') {
+                    const wave = Math.sin(time * 1.2 + target.phase + target.pos.x * 0.01 + target.pos.z * 0.014) * 0.55;
+                    target.pos.y = WATER_SURFACE_Y + wave;
+                }
+                if (target.mesh) {
+                    target.mesh.position.copy(target.pos);
+                    target.mesh.rotation.y += 0.002 + (target.kind === 'SURFACE_CLUSTER' ? 0.0018 : 0.0008);
+                }
+            });
 
             labelObjs.forEach(o=>{
                 const p=o.pos.clone(); p.project(camera);
@@ -1508,38 +1505,22 @@
                 o.el.style.transform = `translate(-50%,-100%) translate(${x}px,${y}px)`;
             });
 
-            // Update Signal Data in UI periodically (every 10 frames approx)
+            // Update pollutant distance list
             if (frameCount % 10 === 0) {
                 let dp = playerDrone.position;
-                // If in fly mode, try to use the tracked drone position (e.g. FEAR or ACS-DS)
                 if (appMode.includes('FLY') && expDrones.length > 0) {
                    const tracked = expDrones.find(d => d.isT) || expDrones[0];
                    if (tracked && tracked.m) dp = tracked.m.position;
                 }
                 
                 if (userElements && userElements.length > 0) {
-                    userElements.forEach((userData, i) => {
-                        const dronePos = dp;
-                        const userPos = userData.pos;
-                        const distance = dronePos.distanceTo(userPos);
-                        
-                        // Check line of sight
-                        const los = checkLineOfSight(dronePos, userPos);
-                        
-                        // Calculate signal strength
-                        const signal = calculateSignalStrength(distance, los.clearRatio);
-                        
-                        // Update display - combine everything in one line
-                        const qualityColor = signal.quality === 'EXCELLENT' ? '#388e3c' : 
-                                            signal.quality === 'GOOD' ? '#689f38' :
-                                            signal.quality === 'FAIR' ? '#f57c00' :
-                                            signal.quality === 'POOR' ? '#d32f2f' : '#757575';
-                        
-                        // Update the coordinate span to include all info in one line
-                        const userId = `USER_${i+1}`;
-                        const userPosStr = `[${userData.pos.x.toFixed(0)},${userData.pos.y.toFixed(0)},${userData.pos.z.toFixed(0)}]`;
-                        userData.coordSpan.innerHTML = `${userId} ${userPosStr} <span style="color:${qualityColor}">| ${distance.toFixed(0)} units | Signal: ${signal.signalPercent}% | ${signal.quality}</span>`;
-                        userData.row.title = `Signal: ${signal.signalStrength} dBm | Obstacles: ${los.obstacles}/${los.samples}`;
+                    userElements.forEach(userData => {
+                        const targetPos = userData.target.pos;
+                        const distance = distanceToTarget(dp, targetPos);
+                        const id = userData.target.id;
+                        const posStr = `[${targetPos.x.toFixed(0)},${targetPos.y.toFixed(1)},${targetPos.z.toFixed(0)}]`;
+                        userData.coordSpan.innerHTML = `${id} ${posStr} <span style="color:#1d9bd1">| Distance: ${distance.toFixed(1)} m</span>`;
+                        userData.row.title = `Distance ${distance.toFixed(1)} m`;
                     });
                 }
             }
@@ -1565,12 +1546,12 @@
         document.body.appendChild(fileInputPath);
         
         document.getElementById('btn-import').onclick=()=>{
-            // Import path data
+            // Import task data
             fileInputPath.click();
         };
         
         document.getElementById('btn-import-env').onclick=()=>{
-            // Import environment data (from drone_map_data.json)
+            // Import environment data
             fileInputEnv.click();
         };
         
@@ -1584,13 +1565,12 @@
                     const parsed = JSON.parse(contents);
                     // Basic validation
                     if (parsed.paths || parsed.waypoints || parsed.experiments) {
-                        // Update current session data
+                        localStorage.setItem(PATH_STORAGE_KEY, contents);
                         loadPathDataIntoState(parsed);
-                        alert("Path data imported successfully (Memory Only).");
-                        // Initialize visualization directly
+                        alert("Task data imported successfully.");
                         setupATC('STATIC');
                     } else {
-                        alert("Invalid path data file.");
+                        alert("Invalid task data file.");
                     }
                 } catch(err) { console.error(err); alert("Error parsing file: " + err.message); }
             };
@@ -1599,7 +1579,7 @@
             fileInputPath.value = '';
         });
 
-        // Import environment data (from drone_map_data.json)
+        // Import environment data
         fileInputEnv.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -1609,8 +1589,7 @@
                     const contents = e.target.result;
                     const parsed = JSON.parse(contents);
                     // Basic validation
-                    if (parsed.seed && parsed.cityBuildings) {
-                        // Save to localStorage (browser can't write files directly)
+                    if (parsed.seed && parsed.mountainBuildings) {
                         localStorage.setItem(ENV_STORAGE_KEY, contents);
                         alert("Environment data imported successfully. Page will reload to apply changes.");
                         location.reload(); // Reload to apply
