@@ -1,1773 +1,1015 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	    <title>OneOcean UUV Demo - Tasks</title>
-    <style>
-        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; background-color: #06293b; }
-        #canvas-container { width: 100vw; height: 100vh; display: block; }
-
-        /* UI Panel */
-        #ui-panel {
-            position: absolute; top: 20px; left: 20px;
-            background: rgba(240, 240, 240, 0.95);
-            padding: 15px; width: 340px;
-            max-height: 90vh; overflow-y: auto;
-            border-radius: 2px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-left: 5px solid #6f5cff;
-            pointer-events: auto; user-select: none; z-index: 100;
-        }
-        #ui-panel::-webkit-scrollbar { width: 6px; }
-        #ui-panel::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-
-        .ui-header { font-weight: bold; font-size: 16px; margin-bottom: 15px; color: #333; letter-spacing: 1px; }
-        .ui-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; color: #555; align-items: center; }
-        .ui-label { font-weight: 600; }
-        .ui-value { font-family: monospace; }
-        .status-blue { color: #1976d2; font-weight: bold; }
-        .divider { border-bottom: 1px dashed #aaa; margin: 10px 0; }
-        .section-title { margin-top: 15px; margin-bottom: 5px; font-size: 11px; color: #777; font-weight: bold; text-transform: uppercase; }
-        .disclaimer { font-size: 9px; color: #888; font-style: italic; margin-bottom: 8px; line-height: 1.2; }
-
-        /* Buttons */
-        .btn-group { display: flex; gap: 5px; margin-top: 5px; }
-        .mode-btn {
-            flex: 1; padding: 8px; background: #ddd; color: #555;
-            border: none; border-radius: 4px; cursor: pointer;
-            font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 10px;
-            transition: all 0.2s; text-align: center;
-        }
-        .mode-btn:hover { background: #ccc; }
-        .mode-btn.active { background: #6f5cff; color: white; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
-        .mode-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-        
-        #btn-snapshot { width: 100%; margin-top: 8px; background: #333; color: #fff; }
-        #btn-import { background: #0288d1; color: white; }
-        #btn-import-env { background: #00796b; color: white; }
-        #file-input { display: none; }
-
-        /* Legend */
-        #legend-box { margin-top: 10px; padding: 8px; background: #eee; border-radius: 4px; font-size: 10px; display: none; }
-        .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
-        .legend-color { width: 12px; height: 3px; margin-right: 8px; border-radius: 2px; }
-        .legend-dot { display: inline-block; width: 8px; height: 8px; background-color: #00ffff; border-radius: 50%; margin-right: 5px; }
-
-        /* Labels */
-        #labels-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 50; }
-        .floating-label {
-            position: absolute; background: #6f5cff; color: white;
-            padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;
-            transform: translate(-50%, -100%); white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: none; border: 1px solid white;
-        }
-        .floating-label::after {
-            content: ''; position: absolute; top: 100%; left: 50%; margin-left: -4px;
-            border-width: 4px; border-style: solid; border-color: #6f5cff transparent transparent transparent;
-        }
-
-        /* Loading */
-        #loading-overlay {
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 300;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            background: rgba(240, 240, 240, 0.95);
-            border-left: 5px solid #6f5cff;
-            border-radius: 4px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-            font-size: 10px;
-            color: #333;
-            pointer-events: none;
-            user-select: none;
-        }
-        #loading-overlay.hidden { display: none; }
-        .loading-spinner {
-            width: 14px;
-            height: 14px;
-            border: 2px solid #ccc;
-            border-top-color: #6f5cff;
-            border-radius: 50%;
-            animation: loading-spin 0.9s linear infinite;
-        }
-        @keyframes loading-spin { to { transform: rotate(360deg); } }
-
-
-
-        .user-coord-row { font-size: 10px; color: #333; margin-bottom: 3px; font-family: monospace; display: flex; justify-content: space-between; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OneOcean UUV Demo - Tasks</title>
+  <style>
+    body { margin: 0; overflow: hidden; font-family: "Courier New", Courier, monospace; background: #06293b; }
+    #canvas-container { width: 100vw; height: 100vh; display: block; }
+    #hud {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      z-index: 50;
+      background: rgba(240, 240, 240, 0.92);
+      color: #222;
+      padding: 10px 12px;
+      border-left: 5px solid #6f5cff;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      font-size: 12px;
+      line-height: 1.35;
+      user-select: none;
+      pointer-events: none;
+      max-width: 380px;
+    }
+    #hud .title { font-weight: 700; letter-spacing: 0.5px; }
+    #hud .sub { color: #444; font-size: 11px; }
+    #hud .kv { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    #hud .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(111, 92, 255, 0.12);
+      border: 1px solid rgba(111, 92, 255, 0.35);
+      color: #2a246f;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    #hud .hint { margin-top: 8px; color: #666; font-size: 10px; }
+    #hud .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  </style>
 </head>
 <body>
-
-    <div id="loading-overlay">
-        <div class="loading-spinner"></div>
-        <div id="loading-text">Loading task examples...</div>
+  <div id="canvas-container"></div>
+  <div id="hud">
+    <div class="title">ONEOCEAN_TASKS_DEMO</div>
+    <div class="sub">No controls (except orbit camera). Visualizing multi-UUV tasks.</div>
+    <div class="kv">
+      <span class="pill" id="pill-phase">Task: Pollution Cleanup</span>
+      <span class="pill" id="pill-progress">0/0</span>
+      <span class="pill" id="pill-time">t=0.0s</span>
     </div>
+    <div class="hint">Orbit camera: drag to rotate, scroll to zoom.</div>
+  </div>
 
-    <div id="canvas-container"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
 
-    <div id="ui-panel">
-        <div class="ui-header">OneOcean Task Examples</div>
-        
-        <div class="ui-row">
-            <span class="ui-label">MODE:</span>
-            <span class="ui-value status-blue" id="mode-val">FREE EXPLORATION</span>
-        </div>
-        <div class="ui-row">
-            <span class="ui-label">REEF OBJECTS:</span>
-            <span class="ui-value" id="obs-count">...</span>
-        </div>
-        <div class="disclaimer"><span class="legend-dot"></span> Cyan particles: Current Flow</div>
+  <script>
+    // Tasks page: observation-only (OrbitControls). No keyboard / UI interactions.
+    // Visualizes:
+    //  - Task 1: Pollution cleanup (diffusion from yellow barrels; multi-UUV approach & neutralize)
+    //  - Task 2: Biological protection (fish near "shore" herded toward deep-sea region)
 
-        <div class="divider"></div>
-        
-        <div class="section-title">① INSPECTION TASK</div>
-	        <div class="ui-label" style="font-size: 9px; color:#555; margin-bottom:4px;">Baseline trajectory (Red) vs optimized trajectory (Blue)</div>
-        <div class="btn-group">
-            <button id="btn-atc-fly" class="mode-btn" disabled>FLY (FPV)</button>
-            <button id="btn-atc-static" class="mode-btn" disabled>RESULT (STATIC)</button>
-        </div>
-        
-        <div class="section-title">② CLEANUP TASK</div>
-        <div class="ui-label" style="font-size: 9px; color:#555; margin-bottom:4px;">Sweep (Yellow) / Patrol (Green) / Coverage (Blue)</div>
-	        <div class="btn-group">
-	            <button id="btn-task-fly" class="mode-btn" disabled>FLY (FPV)</button>
-	            <button id="btn-task-static" class="mode-btn" disabled>RESULT (STATIC)</button>
-	        </div>
+    // --- Deterministic-ish RNG (kept simple) ---
+    let _seed = 20260227;
+    function srand(s) { _seed = s >>> 0; }
+    function rand() {
+      // Mulberry32
+      let t = _seed += 0x6D2B79F5;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    srand(20260227);
 
-        <div id="legend-box">
-            <div id="legend-title" style="font-weight:bold; margin-bottom:5px;">LEGEND</div>
-            <div id="legend-content"></div>
-        </div>
+    const clock = new THREE.Clock();
+    const scene = new THREE.Scene();
+    const fogColor = 0x0d3a55;
+    scene.background = new THREE.Color(fogColor);
+    scene.fog = new THREE.FogExp2(fogColor, 0.0018);
 
-        <div class="divider"></div>
-        <div class="section-title">DATA MANAGEMENT</div>
-        <button id="btn-snapshot" class="mode-btn" style="width:100%; margin-bottom:5px;">SNAPSHOT (PNG)</button>
-        <div class="btn-group">
-            <button id="btn-import-env" class="mode-btn">IMPORT ENV</button>
-            <button id="btn-import" class="mode-btn">IMPORT TASK</button>
-        </div>
-	        <button id="btn-export-task" class="mode-btn" style="width:100%; margin-top:5px; background: #6f5cff; color:white;">EXPORT TASK</button>
-        <input type="file" id="file-input" accept=".json">
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 7000);
+    camera.position.set(160, 180, 260);
 
-        <div class="divider"></div>
-        <div class="section-title">POLLUTION TARGETS / DISTANCE</div>
-        <div id="user-list"></div>
-    </div>
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById("canvas-container").appendChild(renderer.domElement);
 
-    <div id="labels-container"></div>
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.enablePan = false;
+    controls.minDistance = 60;
+    controls.maxDistance = 1200;
+    controls.maxPolarAngle = Math.PI * 0.495;
+    controls.target.set(0, 95, 0);
 
-    <button id="btn-back" style="position: absolute; top: 20px; right: 20px; z-index: 200; padding: 10px 20px; background: #6f5cff; color: white; border: none; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">Back to Ocean Env &larr;</button>
+    // --- Lighting (mirrors index.html style) ---
+    const hemiLight = new THREE.HemisphereLight(0x86d9ff, 0x062433, 0.66);
+    scene.add(hemiLight);
+    const dirLight = new THREE.DirectionalLight(0xbfe8ff, 0.78);
+    dirLight.position.set(110, 300, 70);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 4096;
+    dirLight.shadow.mapSize.height = 4096;
+    dirLight.shadow.camera.left = -500; dirLight.shadow.camera.right = 500;
+    dirLight.shadow.camera.top = 500; dirLight.shadow.camera.bottom = -500;
+    scene.add(dirLight);
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    // --- Sky Dome (matches index.html vibe; not copied from demo_ref/1.html) ---
+    const skyUniforms = {
+      time: { value: 0.0 },
+      topColor: { value: new THREE.Color(0x1b4062) },
+      horizonColor: { value: new THREE.Color(0x5ab2d6) },
+      bottomColor: { value: new THREE.Color(0x041a27) }
+    };
+    const skyDome = new THREE.Mesh(
+      new THREE.SphereGeometry(3600, 48, 32),
+      new THREE.ShaderMaterial({
+        uniforms: skyUniforms,
+        vertexShader: `
+          varying vec3 vWorldPosition;
+          void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * viewMatrix * worldPosition;
+          }
+        `,
+        fragmentShader: `
+          uniform float time;
+          uniform vec3 topColor;
+          uniform vec3 horizonColor;
+          uniform vec3 bottomColor;
+          varying vec3 vWorldPosition;
+          void main() {
+            vec3 p = normalize(vWorldPosition);
+            float h = clamp(p.y * 0.5 + 0.5, 0.0, 1.0);
+            float horizon = smoothstep(0.44, 0.54, h);
+            vec3 col = mix(bottomColor, horizonColor, horizon);
+            col = mix(col, topColor, smoothstep(0.62, 1.0, h));
+            float band = sin((p.x * 7.0 + p.z * 6.0) + time * 0.15) * 0.5 + 0.5;
+            float haze = (1.0 - smoothstep(0.50, 0.70, h)) * 0.06 * band;
+            col += vec3(haze);
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `,
+        side: THREE.BackSide,
+        depthWrite: false,
+        fog: false
+      })
+    );
+    skyDome.frustumCulled = false;
+    scene.add(skyDome);
 
-    <script>
-    try {
-        document.getElementById('btn-back').onclick = () => window.location.href = 'index.html';
+    // --- Terrain & Water (aligned with index.html) ---
+    const simplex = new SimplexNoise(rand);
+    const MAP_SIZE = 1800;
+    const MAP_HALF_SIZE = MAP_SIZE / 2;
+    const MAX_ALT = 280.0;
+    const REEF_FLOOR = -40.0;
+    const WATER_SURFACE_Y = 170.0;
 
-        const loadingOverlay = document.getElementById('loading-overlay');
-        const loadingText = document.getElementById('loading-text');
-        function setLoadingOverlay(visible, text) {
-            if (!loadingOverlay) return;
-            if (loadingText && typeof text === 'string') loadingText.textContent = text;
-            loadingOverlay.classList.toggle('hidden', !visible);
-        }
-        const modeButtons = [
-            document.getElementById('btn-atc-fly'),
-            document.getElementById('btn-atc-static'),
-            document.getElementById('btn-task-fly'),
-            document.getElementById('btn-task-static'),
-        ].filter(Boolean);
-        function setModeButtonsEnabled(enabled) {
-            modeButtons.forEach(btn => { btn.disabled = !enabled; });
-        }
-        setLoadingOverlay(true, 'Loading task data...');
-        setModeButtonsEnabled(false);
+    function getTerrainHeight(x, z) {
+      const broad = simplex.noise2D(x * 0.0018, z * 0.0018) * 26;
+      const medium = simplex.noise2D(x * 0.006, z * 0.006) * 10;
+      const fine = simplex.noise2D(x * 0.028, z * 0.028) * 2.2;
+      const ridge = Math.sin(x * 0.0017 + z * 0.0022) * 8;
+      const trench1 = -42 * Math.exp(-((x + 260) ** 2) / 90000 - ((z - 180) ** 2) / 260000);
+      const trench2 = -35 * Math.exp(-((x - 420) ** 2) / 130000 - ((z + 260) ** 2) / 110000);
+      const crack = -24 * Math.exp(-((z + 0.28 * x - 120) ** 2) / 2800);
+      const escarp = Math.max(0, (Math.sqrt(x * x + z * z) - 520) * 0.03);
+      return REEF_FLOOR + broad + medium + fine + ridge + trench1 + trench2 + crack + escarp;
+    }
 
-        // --- 0. Data Management System ---
-        
-        // Pseudo Random Number Generator (Seeded)
-        // Used to make terrain reproducible from a seed
-        let currentSeed = Math.random();
-        function seedRandom(seed) {
-            currentSeed = seed;
-        }
-        function random() {
-            // Mulberry32
-            let t = currentSeed += 0x6D2B79F5;
-            t = Math.imul(t ^ (t >>> 15), t | 1);
-            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-        }
+    // Seabed
+    const vertexCount = 620;
+    const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE, vertexCount, vertexCount);
+    groundGeo.rotateX(-Math.PI / 2);
+    const groundPos = groundGeo.attributes.position;
+    const colors = [];
+    const cDeep = new THREE.Color(0x082733);
+    const cShallow = new THREE.Color(0x4f7f79);
+    for (let i = 0; i < groundPos.count; i++) {
+      const x = groundPos.getX(i);
+      const z = groundPos.getZ(i);
+      const h = getTerrainHeight(x, z);
+      groundPos.setY(i, h);
+      const t = Math.max(0, Math.min(1, (h - REEF_FLOOR + 8) / 28));
+      const c = cDeep.clone().lerp(cShallow, t);
+      colors.push(c.r, c.g, c.b);
+    }
+    groundGeo.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
+    groundGeo.computeVertexNormals();
+    const groundMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.95,
+      metalness: 0.0,
+      flatShading: true,
+      emissive: new THREE.Color(0x0b2a35),
+      emissiveIntensity: 0.0
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.receiveShadow = true;
+    scene.add(ground);
 
-        // Global State Object (Environment Data - shared with index.html)
-        let worldState = {
-            seed: Date.now(), // Default new seed
-            cityBuildings: [],
-            mountainBuildings: [],
-            buildingColliders: [],
-            cabinPositions: [],
-            finalUsers: []
-        };
+    // Water surface detail
+    function getSurfaceWave(x, z, time) {
+      const base = Math.sin(x * 0.03 + time * 2.4) * 1.7
+        + Math.cos(z * 0.04 + time * 1.8) * 1.1
+        + Math.sin((x + z) * 0.1 + time * 3.8) * 0.45;
+      const swell = Math.sin(x * 0.012 + z * 0.009 + time * 0.9) * 0.6;
+      const micro = Math.sin((x * 0.055 - z * 0.045) + time * 1.9) * 0.18;
+      const wn = simplex.noise3D(x * 0.004, z * 0.004, time * 0.2) * 0.25;
+      return base + swell + micro + wn;
+    }
 
-        // Task Data (separate from environment)
-        let taskData = {
-            tasks: [],
-            waypoints: [],
-            experiments: []
-        };
+    const waterGeo = new THREE.PlaneGeometry(MAP_SIZE * 1.04, MAP_SIZE * 1.04, 240, 240);
+    waterGeo.rotateX(-Math.PI / 2);
+    const waterPos = waterGeo.attributes.position;
+    const waterBase = Float32Array.from(waterPos.array);
+    for (let i = 0; i < waterPos.count; i++) {
+      const x = waterPos.getX(i);
+      const z = waterPos.getZ(i);
+      waterPos.setY(i, WATER_SURFACE_Y + getSurfaceWave(x, z, 0));
+    }
+    const waterSurface = new THREE.Mesh(
+      waterGeo,
+      new THREE.MeshPhongMaterial({
+        color: 0x0a3a4a,
+        specular: 0x55ccff,
+        shininess: 300,
+        transparent: true,
+        opacity: 0.78,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    waterSurface.receiveShadow = false;
+    scene.add(waterSurface);
 
-        // Storage Keys
-        const ENV_STORAGE_KEY = 'oneocean_uuv_env_v2';
-        const TASK_STORAGE_KEY = 'oneocean_task_data_v1';
+    // --- Environment clutter: rocks + seagrass + coral + shells (lighter version for tasks) ---
+    const dummy = new THREE.Object3D();
 
-        // Load Environment Data (local only)
-        let isLoadedFromData = false;
-        const cachedEnvData = localStorage.getItem(ENV_STORAGE_KEY);
-        if (cachedEnvData) {
-            try {
-                const parsed = JSON.parse(cachedEnvData);
-                if (parsed.seed && parsed.mountainBuildings) {
-                    worldState = parsed;
-                    isLoadedFromData = true;
-                    seedRandom(worldState.seed);
-                }
-            } catch (e) {
-                console.warn("Failed to parse cached environment data.");
-            }
-        }
-        if (!isLoadedFromData) {
-            worldState.seed = Math.random() * 100000;
-            seedRandom(worldState.seed);
-        }
+    // Rocks (instanced)
+    const rockGeo = new THREE.DodecahedronGeometry(1.0, 0);
+    rockGeo.translate(0, 0.65, 0);
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x5f6366, roughness: 0.95, flatShading: true });
+    const rockMesh = new THREE.InstancedMesh(rockGeo, rockMat, 1200);
+    rockMesh.castShadow = true;
+    rockMesh.receiveShadow = true;
+    let rockCount = 0;
+    for (let i = 0; i < 26000 && rockCount < 1200; i++) {
+      const x = (rand() - 0.5) * 1600;
+      const z = (rand() - 0.5) * 1600;
+      const h = getTerrainHeight(x, z);
+      if (h < REEF_FLOOR - 18 || h > 55) continue;
+      dummy.position.set(x, h - 0.05, z);
+      const s = 0.7 + rand() * 3.6;
+      dummy.scale.set(s * (0.75 + rand() * 0.55), s, s * (0.75 + rand() * 0.55));
+      dummy.rotation.set(rand() * Math.PI, rand() * Math.PI, rand() * Math.PI);
+      dummy.updateMatrix();
+      rockMesh.setMatrixAt(rockCount++, dummy.matrix);
+    }
+    rockMesh.count = rockCount;
+    scene.add(rockMesh);
 
-        let taskDataLoaded = false;
-        let waypoints = [];
+    // Seagrass
+    const grassGeo = new THREE.ConeGeometry(0.25, 3.2, 6, 1);
+    grassGeo.translate(0, 1.6, 0);
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x2c8a6e, roughness: 0.85, metalness: 0.0 });
+    const grassMesh = new THREE.InstancedMesh(grassGeo, grassMat, 5200);
+    grassMesh.castShadow = false;
+    grassMesh.receiveShadow = true;
+    let grassCount = 0;
+    for (let i = 0; i < 140000 && grassCount < 5200; i++) {
+      const x = (rand() - 0.5) * 1700;
+      const z = (rand() - 0.5) * 1700;
+      const h = getTerrainHeight(x, z);
+      if (h < REEF_FLOOR - 12 || h > 50) continue;
+      const cluster = 0.5 + 0.5 * simplex.noise2D(x * 0.006, z * 0.006);
+      if (rand() > Math.min(1.0, cluster * 0.72)) continue;
+      dummy.position.set(x, h + 0.1, z);
+      const s = 0.35 + rand() * 1.25;
+      dummy.scale.set(s * (0.85 + rand() * 0.4), s * (0.9 + rand() * 0.5), s * (0.85 + rand() * 0.4));
+      dummy.rotation.set((rand() - 0.5) * 0.2, rand() * Math.PI * 2, (rand() - 0.5) * 0.2);
+      dummy.updateMatrix();
+      grassMesh.setMatrixAt(grassCount++, dummy.matrix);
+    }
+    grassMesh.count = grassCount;
+    scene.add(grassMesh);
 
-        function createDefaultTaskData() {
-            const anchorY = 112;
-            const inspectWaypoints = [
-                { x: -420, y: anchorY, z: -360 },
-                { x: -210, y: anchorY - 6, z: -170 },
-                { x: 40, y: anchorY - 12, z: -90 },
-                { x: 220, y: anchorY - 16, z: 120 },
-                { x: 430, y: anchorY - 18, z: 260 }
-            ];
-            const cleanupWaypoints = [
-                { x: -500, y: anchorY - 18, z: 200 },
-                { x: -280, y: anchorY - 22, z: 350 },
-                { x: -60, y: anchorY - 24, z: 390 },
-                { x: 150, y: anchorY - 21, z: 250 },
-                { x: 320, y: anchorY - 17, z: 80 },
-                { x: 480, y: anchorY - 15, z: -130 }
-            ];
-            return {
-                mapSeed: worldState.seed,
-                waypoints: inspectWaypoints,
-                experiments: [
-                    { name: 'INSPECT_BASELINE', tasks: [inspectWaypoints] },
-                    { name: 'INSPECT_OPTIMIZED', tasks: [[
-                        { x: -420, y: anchorY, z: -360 },
-                        { x: -270, y: anchorY - 4, z: -230 },
-                        { x: -30, y: anchorY - 10, z: -80 },
-                        { x: 160, y: anchorY - 14, z: 80 },
-                        { x: 430, y: anchorY - 18, z: 260 }
-                    ]] },
-                    { name: 'CLEANUP_SWEEP', tasks: [cleanupWaypoints] },
-                    { name: 'CLEANUP_PATROL', tasks: [[
-                        { x: -500, y: anchorY - 16, z: 200 },
-                        { x: -350, y: anchorY - 19, z: 300 },
-                        { x: -80, y: anchorY - 24, z: 280 },
-                        { x: 180, y: anchorY - 19, z: 180 },
-                        { x: 360, y: anchorY - 16, z: -10 },
-                        { x: 480, y: anchorY - 15, z: -130 }
-                    ]] },
-                    { name: 'CLEANUP_COVERAGE', tasks: [[
-                        { x: -500, y: anchorY - 18, z: 200 },
-                        { x: -320, y: anchorY - 22, z: 360 },
-                        { x: -20, y: anchorY - 26, z: 360 },
-                        { x: 220, y: anchorY - 20, z: 220 },
-                        { x: 360, y: anchorY - 17, z: 60 },
-                        { x: 480, y: anchorY - 15, z: -130 }
-                    ]] }
-                ]
-            };
-        }
+    // Coral
+    const coralGeo = new THREE.IcosahedronGeometry(0.8, 0);
+    coralGeo.translate(0, 0.6, 0);
+    const coralMat = new THREE.MeshStandardMaterial({ color: 0xb57a53, roughness: 0.9, metalness: 0.02, flatShading: true });
+    const coralMesh = new THREE.InstancedMesh(coralGeo, coralMat, 1800);
+    coralMesh.castShadow = true;
+    coralMesh.receiveShadow = true;
+    let coralCount = 0;
+    for (let i = 0; i < 70000 && coralCount < 1800; i++) {
+      const x = (rand() - 0.5) * 1700;
+      const z = (rand() - 0.5) * 1700;
+      const h = getTerrainHeight(x, z);
+      if (h < REEF_FLOOR - 10 || h > 44) continue;
+      const cluster = 0.5 + 0.5 * simplex.noise2D(x * 0.0045 + 120, z * 0.0045 + 60);
+      if (rand() > Math.min(1.0, cluster * 0.55)) continue;
+      dummy.position.set(x, h + 0.08, z);
+      const s = 0.45 + rand() * 2.1;
+      dummy.scale.setScalar(s);
+      dummy.rotation.set(0, rand() * Math.PI * 2, 0);
+      dummy.updateMatrix();
+      coralMesh.setMatrixAt(coralCount++, dummy.matrix);
+    }
+    coralMesh.count = coralCount;
+    scene.add(coralMesh);
 
-        const loadTaskDataIntoState = (data) => {
-            if (!(data.tasks || data.paths || data.waypoints || data.experiments)) return;
-            taskData = data;
-            if (!Array.isArray(taskData.tasks)) taskData.tasks = Array.isArray(taskData.paths) ? taskData.paths : [];
-            if (data.waypoints && data.waypoints.length > 0) {
-                waypoints = data.waypoints.map(w => new THREE.Vector3(w.x, w.y, w.z));
-            }
-            taskDataLoaded = true;
-            setLoadingOverlay(false);
-            setModeButtonsEnabled(true);
-            if (!window.appMode) setupATC('STATIC');
-        };
+    // Shells
+    const shellGeo = new THREE.SphereGeometry(0.5, 10, 8);
+    shellGeo.scale(1.2, 0.55, 0.95);
+    shellGeo.translate(0, 0.1, 0);
+    const shellMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c4, roughness: 0.92, metalness: 0.05, flatShading: true });
+    const shellMesh = new THREE.InstancedMesh(shellGeo, shellMat, 1600);
+    shellMesh.castShadow = false;
+    shellMesh.receiveShadow = true;
+    let shellCount = 0;
+    for (let i = 0; i < 80000 && shellCount < 1600; i++) {
+      const x = (rand() - 0.5) * 1700;
+      const z = (rand() - 0.5) * 1700;
+      const h = getTerrainHeight(x, z);
+      if (h < REEF_FLOOR - 12 || h > 55) continue;
+      const sand = 0.5 + 0.5 * simplex.noise2D(x * 0.004, z * 0.004);
+      if (rand() > Math.min(1.0, sand * 0.65)) continue;
+      dummy.position.set(x, h + 0.12, z);
+      const s = 0.22 + rand() * 0.85;
+      dummy.scale.set(s * (0.75 + rand() * 0.5), s, s * (0.75 + rand() * 0.5));
+      dummy.rotation.set((rand() - 0.5) * 0.4, rand() * Math.PI * 2, (rand() - 0.5) * 0.4);
+      dummy.updateMatrix();
+      shellMesh.setMatrixAt(shellCount++, dummy.matrix);
+    }
+    shellMesh.count = shellCount;
+    scene.add(shellMesh);
 
-        const importedTaskData = localStorage.getItem(TASK_STORAGE_KEY);
-        if (importedTaskData) {
-            try {
-                const parsed = JSON.parse(importedTaskData);
-                loadTaskDataIntoState(parsed);
-            } catch (e) {
-                loadTaskDataIntoState(createDefaultTaskData());
-            }
+    // --- Current particles (visual "flow") ---
+    const currentCount = 4200;
+    const currentGeo = new THREE.BufferGeometry();
+    const cPos = new Float32Array(currentCount * 3);
+    const cVel = new Float32Array(currentCount);
+    for (let i = 0; i < currentCount; i++) {
+      cPos[i * 3] = (Math.random() - 0.5) * (MAP_SIZE * 0.95);
+      cPos[i * 3 + 1] = Math.random() * (MAX_ALT - REEF_FLOOR) + REEF_FLOOR;
+      cPos[i * 3 + 2] = (Math.random() - 0.5) * (MAP_SIZE * 0.95);
+      cVel[i] = 0.55 + Math.random() * 1.6;
+    }
+    currentGeo.setAttribute("position", new THREE.BufferAttribute(cPos, 3));
+    const currentPts = new THREE.Points(
+      currentGeo,
+      new THREE.PointsMaterial({ color: 0x8ce9ff, size: 0.9, transparent: true, opacity: 0.5, sizeAttenuation: true })
+    );
+    scene.add(currentPts);
+
+    function getCurrentAt(pos, time) {
+      const scale = 0.0022;
+      const timeScale = 0.09;
+      const bx = simplex.noise2D(pos.x * 0.0012, time * 0.06);
+      const bz = simplex.noise2D(pos.z * 0.0012 + 100, time * 0.06);
+      let wind = new THREE.Vector3(bx, 0, bz).normalize().multiplyScalar(4.8);
+      wind.x += simplex.noise3D(pos.x * scale, pos.z * scale, time * timeScale) * 1.8;
+      wind.z += simplex.noise3D(pos.x * scale + 100, pos.z * scale + 100, time * timeScale) * 1.8;
+      const th = getTerrainHeight(pos.x, pos.z);
+      let occ = 1.0;
+      if (pos.y < th + 24) occ *= 0.25 + 0.75 * Math.max(0, (pos.y - th) / 24);
+      wind.multiplyScalar(occ);
+      if (wind.length() > 11) wind.multiplyScalar(11 / wind.length());
+      return wind;
+    }
+
+    // --- Pollution clusters (Task 1) ---
+    function createPollutionBarrel() {
+      const group = new THREE.Group();
+      const barrelYellowMat = new THREE.MeshStandardMaterial({
+        color: 0xf3d24a,
+        roughness: 0.55,
+        metalness: 0.12,
+        emissive: 0x3a2c00,
+        emissiveIntensity: 0.08
+      });
+      const barrel = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 2.2, 18), barrelYellowMat);
+      group.add(barrel);
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0x2f3235, roughness: 0.75, metalness: 0.15 });
+      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.08, 8, 18), ringMat);
+      ring1.position.y = 0.76;
+      ring1.rotation.x = Math.PI / 2;
+      group.add(ring1);
+      const ring2 = ring1.clone();
+      ring2.position.y = -0.76;
+      group.add(ring2);
+      const stripe = new THREE.Mesh(
+        new THREE.TorusGeometry(0.98, 0.06, 8, 18),
+        new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 })
+      );
+      stripe.rotation.x = Math.PI / 2;
+      group.add(stripe);
+      const sign = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.95, 0.95),
+        new THREE.MeshBasicMaterial({ color: 0xf3d24a, side: THREE.DoubleSide })
+      );
+      sign.position.set(0, 0.2, 1.03);
+      group.add(sign);
+      const hazard = new THREE.Mesh(
+        new THREE.RingGeometry(0.14, 0.28, 3),
+        new THREE.MeshBasicMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide })
+      );
+      hazard.position.copy(sign.position.clone().add(new THREE.Vector3(0, 0.0, 0.02)));
+      hazard.rotation.z = Math.PI / 6;
+      group.add(hazard);
+      return group;
+    }
+
+    function createPollutionCluster(id, x, z) {
+      const baseY = getTerrainHeight(x, z) + 1.1;
+      const center = new THREE.Vector3(x, baseY, z);
+
+      const barrel = createPollutionBarrel();
+      barrel.position.copy(center);
+      scene.add(barrel);
+
+      const plumeMat = new THREE.MeshPhongMaterial({
+        color: 0x4cff87,
+        transparent: true,
+        opacity: 0.20,
+        shininess: 120,
+        depthWrite: false
+      });
+      const plume = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), plumeMat);
+      plume.position.copy(center);
+      plume.castShadow = false;
+      plume.receiveShadow = false;
+      scene.add(plume);
+
+      // Diffusion particles (simple outward + current drift)
+      const PCOUNT = 1600;
+      const pGeo = new THREE.BufferGeometry();
+      const pArr = new Float32Array(PCOUNT * 3);
+      const pBase = new Float32Array(PCOUNT * 3);
+      const pVelArr = new Float32Array(PCOUNT * 3);
+      for (let i = 0; i < PCOUNT; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const r = Math.random() * 0.9;
+        const y = (Math.random() - 0.5) * 0.6;
+        pArr[i * 3] = center.x + Math.cos(ang) * r;
+        pArr[i * 3 + 1] = center.y + y;
+        pArr[i * 3 + 2] = center.z + Math.sin(ang) * r;
+        pBase.set(pArr.subarray(i * 3, i * 3 + 3), i * 3);
+
+        const v = new THREE.Vector3(Math.cos(ang), (Math.random() - 0.5) * 0.15, Math.sin(ang)).normalize().multiplyScalar(0.6 + Math.random() * 1.1);
+        pVelArr[i * 3] = v.x;
+        pVelArr[i * 3 + 1] = v.y;
+        pVelArr[i * 3 + 2] = v.z;
+      }
+      pGeo.setAttribute("position", new THREE.BufferAttribute(pArr, 3));
+      const pMat = new THREE.PointsMaterial({
+        color: 0x76ff99,
+        size: 1.15,
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const pts = new THREE.Points(pGeo, pMat);
+      scene.add(pts);
+
+      return {
+        id,
+        center,
+        barrel,
+        plume,
+        pts,
+        pArr,
+        pBase,
+        pVelArr,
+        radius: 1.0,
+        maxRadius: 38.0,
+        cleaned: false,
+        cleanTime: 0
+      };
+    }
+
+    const pollutionClusters = [
+      createPollutionCluster("P1", -40, 10),
+      createPollutionCluster("P2", 55, -30),
+      createPollutionCluster("P3", 15, 70)
+    ];
+
+    // --- UUV model (simplified from index.html) ---
+    function createUUV(accentColor = 0x223f50) {
+      const g = new THREE.Group();
+      const bodyMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.52, metalness: 0.22 });
+      const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), bodyMat);
+      hull.rotation.x = Math.PI / 2;
+      g.add(hull);
+      const nose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), bodyMat);
+      nose.position.z = -4.9;
+      g.add(nose);
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), bodyMat);
+      tail.rotation.x = -Math.PI / 2;
+      tail.position.z = 5.35;
+      g.add(tail);
+      const band = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
+      band.rotation.x = Math.PI / 2;
+      band.position.z = -0.3;
+      g.add(band);
+
+      const finMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
+      const finTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), finMat); finTop.position.set(0, 1.16, 2.45); g.add(finTop);
+      const finBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), finMat); finBottom.position.set(0, -1.02, 2.75); g.add(finBottom);
+      const finLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finLeft.position.set(-1.12, 0.02, 2.55); finLeft.rotation.z = 0.2; g.add(finLeft);
+      const finRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finRight.position.set(1.12, 0.02, 2.55); finRight.rotation.z = -0.2; g.add(finRight);
+
+      const propGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
+      const propMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
+      const ductMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
+      const strutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
+      const props = [];
+      const podPositions = [
+        { x: -1.55, y: 0.95, z: 3.15 },
+        { x: 1.55, y: 0.95, z: 3.15 },
+        { x: -1.55, y: -0.95, z: 3.15 },
+        { x: 1.55, y: -0.95, z: 3.15 }
+      ];
+      podPositions.forEach(pos => {
+        const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), strutMat);
+        strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
+        strut.rotation.z = Math.atan2(pos.x, 1.8);
+        g.add(strut);
+
+        const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), ductMat);
+        duct.position.set(pos.x, pos.y, pos.z);
+        duct.rotation.x = Math.PI / 2;
+        g.add(duct);
+
+        const p = new THREE.Mesh(propGeo, propMat);
+        p.position.set(pos.x, pos.y, pos.z);
+        p.rotation.x = Math.PI / 2;
+        g.add(p);
+        props.push(p);
+      });
+
+      // Spotlights (always on)
+      const frontLight = new THREE.SpotLight(0x9ff7ff, 2.0, 220, Math.PI / 7.5, 0.55, 1.0);
+      frontLight.position.set(0, 0.6, -4.9);
+      frontLight.target.position.set(0, 0.2, -40);
+      g.add(frontLight);
+      g.add(frontLight.target);
+      const downLight = new THREE.SpotLight(0xbef7ff, 1.6, 160, Math.PI / 6.8, 0.55, 1.0);
+      downLight.position.set(0, -0.45, -0.5);
+      downLight.target.position.set(0, -40, -0.5);
+      g.add(downLight);
+      g.add(downLight.target);
+
+      // Neutralizer spray cone (only visible during cleaning)
+      const spray = new THREE.Mesh(
+        new THREE.ConeGeometry(1.15, 6.5, 16, 1, true),
+        new THREE.MeshBasicMaterial({
+          color: 0xb3fff6,
+          transparent: true,
+          opacity: 0.0,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide
+        })
+      );
+      spray.rotation.x = Math.PI / 2;
+      spray.position.set(0, 0, -6.3);
+      g.add(spray);
+
+      g.userData = { props, frontLight, downLight, spray };
+      g.scale.set(0.42, 0.42, 0.42);
+      return g;
+    }
+
+    const vehicles = [];
+    const VEHICLE_COUNT = 5;
+    for (let i = 0; i < VEHICLE_COUNT; i++) {
+      const v = createUUV(0x223f50);
+      v.position.set(120 + i * 12, 105 + (i % 2) * 4, 120 - i * 14);
+      v.rotation.y = Math.PI + i * 0.2;
+      v.userData.motion = {
+        vel: new THREE.Vector3(),
+        mode: "POLLUTION",
+        sub: "TRAVEL",
+        hold: 0,
+        idx: i
+      };
+      scene.add(v);
+      vehicles.push(v);
+    }
+
+    function steerTo(vObj, targetPos, dt, speed) {
+      const motion = vObj.userData.motion;
+      const pos = vObj.position;
+      const to = targetPos.clone().sub(pos);
+      const dist = to.length();
+      if (dist < 1e-6) return { dist: 0 };
+      to.multiplyScalar(1 / dist);
+      const desired = to.multiplyScalar(speed);
+      motion.vel.lerp(desired, 0.08);
+      pos.addScaledVector(motion.vel, dt);
+      // Face velocity direction
+      const yaw = Math.atan2(motion.vel.x, motion.vel.z);
+      if (isFinite(yaw)) vObj.rotation.y = yaw;
+      // Gentle pitch to suggest motion (underwater vehicle)
+      const pitch = THREE.MathUtils.clamp(-motion.vel.length() / 45, -0.22, 0.12);
+      vObj.rotation.x = THREE.MathUtils.lerp(vObj.rotation.x, pitch, 0.06);
+      // Clamp below surface (never leave water)
+      const surf = WATER_SURFACE_Y - 2.0;
+      if (pos.y > surf) pos.y = surf;
+      // Avoid terrain
+      const th = getTerrainHeight(pos.x, pos.z) + 3.2;
+      if (pos.y < th) pos.y = th;
+      return { dist };
+    }
+
+    // --- Task 2: Fish school ---
+    const fish = [];
+    const FISH_COUNT = 90;
+    const fishGeo = new THREE.ConeGeometry(0.25, 0.9, 7);
+    fishGeo.rotateX(Math.PI / 2);
+    const fishMat = new THREE.MeshStandardMaterial({ color: 0x7ad0ff, roughness: 0.55, metalness: 0.08 });
+    const fishMesh = new THREE.InstancedMesh(fishGeo, fishMat, FISH_COUNT);
+    fishMesh.castShadow = false;
+    fishMesh.receiveShadow = false;
+    scene.add(fishMesh);
+
+    // Define a "near shore" region as a shallower patch closer to map edge (visual is subtle but location is fixed)
+    const fishSpawnCenter = new THREE.Vector3(-520, 120, 520);
+    fishSpawnCenter.y = Math.min(WATER_SURFACE_Y - 18, Math.max(getTerrainHeight(fishSpawnCenter.x, fishSpawnCenter.z) + 22, 95));
+    const deepSeaTarget = new THREE.Vector3(520, 85, -420);
+    deepSeaTarget.y = Math.max(getTerrainHeight(deepSeaTarget.x, deepSeaTarget.z) + 14, 65);
+
+    for (let i = 0; i < FISH_COUNT; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const r = Math.random() * 28;
+      const pos = new THREE.Vector3(
+        fishSpawnCenter.x + Math.cos(ang) * r,
+        fishSpawnCenter.y + (Math.random() - 0.5) * 10,
+        fishSpawnCenter.z + Math.sin(ang) * r
+      );
+      const vel = new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5) * 0.1, (Math.random() - 0.5)).normalize().multiplyScalar(6 + Math.random() * 5);
+      fish.push({ pos, vel });
+    }
+
+    // --- Scenario / State Machine ---
+    const hudPhase = document.getElementById("pill-phase");
+    const hudProgress = document.getElementById("pill-progress");
+    const hudTime = document.getElementById("pill-time");
+
+    const scenario = {
+      phase: "POLLUTION", // POLLUTION -> FISH -> DONE
+      clusterIndex: 0,
+      cleanedCount: 0,
+      clusterCleanHold: 7.5, // seconds of spraying to neutralize
+      transitionHold: 2.0,
+      tPhase: 0
+    };
+
+    function setSpray(vehicle, visible, lenScale) {
+      const spray = vehicle.userData.spray;
+      if (!spray) return;
+      if (!visible) {
+        spray.material.opacity = 0.0;
+        return;
+      }
+      spray.scale.set(1.0, Math.max(0.35, lenScale), 1.0);
+      spray.material.opacity = 0.28 + 0.18 * Math.sin(clock.getElapsedTime() * 9.0);
+    }
+
+    function updateVehicleProps(vehicle, dt) {
+      const props = vehicle.userData.props || [];
+      const speed = vehicle.userData.motion?.vel?.length?.() || 0;
+      const spin = (8.0 + speed * 0.18) * dt;
+      for (const p of props) p.rotation.z += spin;
+      // Keep spotlights large/bright, depth-aware (but not too dark)
+      const depthNorm = Math.max(0, Math.min(1, (vehicle.position.y - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)));
+      vehicle.userData.frontLight.intensity = 2.0 + (1 - depthNorm) * 1.2;
+      vehicle.userData.downLight.intensity = 1.6 + (1 - depthNorm) * 1.1;
+    }
+
+    function updatePollutionCluster(cluster, dt, time) {
+      if (!cluster.cleaned) {
+        cluster.radius = Math.min(cluster.maxRadius, cluster.radius + dt * 1.45);
+      } else {
+        cluster.cleanTime += dt;
+      }
+
+      // Plume size + subtle wobble (diffusion)
+      const wob = 1.0 + 0.05 * Math.sin(time * 1.4 + cluster.center.x * 0.02) + 0.03 * Math.sin(time * 2.7);
+      cluster.plume.scale.setScalar(cluster.radius * wob);
+      cluster.plume.material.opacity = cluster.cleaned
+        ? Math.max(0, 0.18 - cluster.cleanTime * 0.03)
+        : 0.18 + 0.03 * Math.sin(time * 1.1);
+      cluster.plume.material.color.setHex(cluster.cleaned ? 0x6aa6ad : 0x4cff87);
+
+      // Particles drift outward + current
+      const posAttr = cluster.pts.geometry.attributes.position;
+      const arr = posAttr.array;
+      const center = cluster.center;
+      for (let i = 0; i < cluster.pArr.length; i += 3) {
+        const px = arr[i], py = arr[i + 1], pz = arr[i + 2];
+        const p = new THREE.Vector3(px, py, pz);
+        if (!cluster.cleaned) {
+          const wind = getCurrentAt(p, time);
+          arr[i] += (cluster.pVelArr[i] + wind.x * 0.12) * dt;
+          arr[i + 1] += (cluster.pVelArr[i + 1]) * dt;
+          arr[i + 2] += (cluster.pVelArr[i + 2] + wind.z * 0.12) * dt;
+          // Soft clamp within plume radius (keeps diffusion around source)
+          const dx = arr[i] - center.x;
+          const dz = arr[i + 2] - center.z;
+          const r = Math.sqrt(dx * dx + dz * dz);
+          const maxR = cluster.radius * 1.15;
+          if (r > maxR) {
+            const k = maxR / Math.max(1e-6, r);
+            arr[i] = center.x + dx * k;
+            arr[i + 2] = center.z + dz * k;
+          }
         } else {
-            loadTaskDataIntoState(createDefaultTaskData());
+          // Freeze diffusion once cleaned (stop spreading)
+          // Slowly fade particles by pulling them back toward center.
+          arr[i] = THREE.MathUtils.lerp(arr[i], cluster.pBase[i], 0.04);
+          arr[i + 1] = THREE.MathUtils.lerp(arr[i + 1], cluster.pBase[i + 1], 0.04);
+          arr[i + 2] = THREE.MathUtils.lerp(arr[i + 2], cluster.pBase[i + 2], 0.04);
         }
+      }
+      posAttr.needsUpdate = true;
+      cluster.pts.material.color.setHex(cluster.cleaned ? 0x9fb4b7 : 0x76ff99);
+      cluster.pts.material.opacity = cluster.cleaned
+        ? Math.max(0, 0.48 - cluster.cleanTime * 0.05)
+        : 0.55;
+    }
 
-        // --- 1. Scene Initialization ---
-        const clock = new THREE.Clock();
-        const scene = new THREE.Scene();
-        const fogColor = 0x0d3a55;
-        scene.background = new THREE.Color(fogColor);
-        scene.fog = new THREE.FogExp2(fogColor, 0.0018);
+    function updateFish(dt, time, herdersActive) {
+      // Simplified schooling + herding:
+      // - baseline drift toward deepSeaTarget
+      // - repulsion from vehicles (herders) pushes school forward
+      const tmp = new THREE.Vector3();
+      const tmp2 = new THREE.Vector3();
+      for (let i = 0; i < fish.length; i++) {
+        const f = fish[i];
+        // Goal drift
+        tmp.copy(deepSeaTarget).sub(f.pos);
+        const distToGoal = Math.max(1e-6, tmp.length());
+        tmp.multiplyScalar(1 / distToGoal);
+        const goal = tmp.multiplyScalar(2.0);
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 7000); 
-        camera.position.set(0, 150, 240); 
+        // Small curl noise
+        const n = simplex.noise3D(f.pos.x * 0.003, f.pos.z * 0.003, time * 0.25);
+        const swirl = new THREE.Vector3(Math.cos(n * Math.PI * 2), 0, Math.sin(n * Math.PI * 2)).multiplyScalar(0.9);
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        // --- 2. Lighting ---
-        const hemiLight = new THREE.HemisphereLight(0x86d9ff, 0x062433, 0.66);
-        scene.add(hemiLight);
-        const dirLight = new THREE.DirectionalLight(0xbfe8ff, 0.78);
-        dirLight.position.set(110, 300, 70);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 4096; 
-        dirLight.shadow.mapSize.height = 4096;
-        dirLight.shadow.camera.left = -500; dirLight.shadow.camera.right = 500;
-        dirLight.shadow.camera.top = 500; dirLight.shadow.camera.bottom = -500;
-        scene.add(dirLight);
-
-        // --- Sky Dome (custom, not copied from demo_ref/1.html) ---
-        const skyUniforms = {
-            time: { value: 0.0 },
-            topColor: { value: new THREE.Color(0x061828) },
-            horizonColor: { value: new THREE.Color(0x2a6f9f) },
-            bottomColor: { value: new THREE.Color(0xb9d8ef) }
-        };
-        const skyDome = new THREE.Mesh(
-            new THREE.SphereGeometry(5200, 36, 24),
-            new THREE.ShaderMaterial({
-                uniforms: skyUniforms,
-                vertexShader: `
-                    varying vec3 vWorldPosition;
-                    void main() {
-                        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-                        vWorldPosition = worldPosition.xyz;
-                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                    }
-                `,
-                fragmentShader: `
-                    uniform float time;
-                    uniform vec3 topColor;
-                    uniform vec3 horizonColor;
-                    uniform vec3 bottomColor;
-                    varying vec3 vWorldPosition;
-                    void main() {
-                        vec3 p = normalize(vWorldPosition);
-                        float h = clamp(p.y * 0.5 + 0.5, 0.0, 1.0);
-                        float horizon = smoothstep(0.44, 0.54, h);
-                        vec3 col = mix(bottomColor, horizonColor, horizon);
-                        col = mix(col, topColor, smoothstep(0.62, 1.0, h));
-                        float band = sin((p.x * 7.0 + p.z * 6.0) + time * 0.15) * 0.5 + 0.5;
-                        float haze = (1.0 - smoothstep(0.50, 0.70, h)) * 0.06 * band;
-                        col += vec3(haze);
-                        gl_FragColor = vec4(col, 1.0);
-                    }
-                `,
-                side: THREE.BackSide,
-                depthWrite: false,
-                fog: false
-            })
-        );
-        skyDome.frustumCulled = false;
-        scene.add(skyDome);
-
-        // --- 3. Terrain & Environment ---
-        // Pass our custom random function to SimplexNoise for deterministic terrain
-        const simplex = new SimplexNoise(random);
-        const MAP_SIZE = 1800;
-        const MAP_HALF_SIZE = MAP_SIZE / 2;
-        const MAX_ALT = 280.0;
-        const REEF_FLOOR = -40.0;
-        const WATER_SURFACE_Y = 170.0;
-        const lakes = [];
-
-        // --- AIR WALLS ---
-        const airWallGroup = new THREE.Group();
-        const wallMat = new THREE.MeshBasicMaterial({ color: 0x58d6ff, transparent: true, opacity: 0.0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false });
-        const wallGeoH = new THREE.PlaneGeometry(MAP_SIZE, MAX_ALT);
-        const wallGeoV = new THREE.PlaneGeometry(MAP_SIZE, MAX_ALT);
-        const ceilGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
-
-        const wallPz = new THREE.Mesh(wallGeoH, wallMat.clone()); wallPz.position.set(0, MAX_ALT / 2, MAP_HALF_SIZE);
-        const wallNz = new THREE.Mesh(wallGeoH, wallMat.clone()); wallNz.position.set(0, MAX_ALT / 2, -MAP_HALF_SIZE);
-        const wallPx = new THREE.Mesh(wallGeoV, wallMat.clone()); wallPx.position.set(MAP_HALF_SIZE, MAX_ALT / 2, 0); wallPx.rotation.y = Math.PI / 2;
-        const wallNx = new THREE.Mesh(wallGeoV, wallMat.clone()); wallNx.position.set(-MAP_HALF_SIZE, MAX_ALT / 2, 0); wallNx.rotation.y = Math.PI / 2;
-        const ceil = new THREE.Mesh(ceilGeo, wallMat.clone()); ceil.position.set(0, MAX_ALT, 0); ceil.rotation.x = Math.PI / 2;
-
-        airWallGroup.add(wallPz, wallNz, wallPx, wallNx, ceil);
-        scene.add(airWallGroup);
-
-        function getCityLimit() { return 0; }
-        function getLakeFactor() { return Infinity; }
-        function isInLake() { return false; }
-        function isOnRoad() { return false; }
-
-        function getTerrainHeight(x, z) {
-            const broad = simplex.noise2D(x * 0.0018, z * 0.0018) * 26;
-            const medium = simplex.noise2D(x * 0.006, z * 0.006) * 10;
-            const fine = simplex.noise2D(x * 0.028, z * 0.028) * 2.2;
-            const ridge = Math.sin(x * 0.0017 + z * 0.0022) * 8;
-
-            const trench1 = -42 * Math.exp(-((x + 260) ** 2) / 90000 - ((z - 180) ** 2) / 260000);
-            const trench2 = -35 * Math.exp(-((x - 420) ** 2) / 130000 - ((z + 260) ** 2) / 110000);
-            const crack = -24 * Math.exp(-((z + 0.28 * x - 120) ** 2) / 2800);
-            const escarp = Math.max(0, (Math.sqrt(x * x + z * z) - 520) * 0.03);
-
-            return REEF_FLOOR + broad + medium + fine + ridge + trench1 + trench2 + crack + escarp;
-        }
-
-        // --- Seabed ---
-        const planeSize = MAP_SIZE;
-        const vertexCount = 420;
-        const geometry = new THREE.PlaneGeometry(planeSize, planeSize, vertexCount, vertexCount);
-        geometry.rotateX(-Math.PI / 2);
-        const positions = geometry.attributes.position;
-        const colors = [];
-        const cDeep = new THREE.Color(0x082733);
-        const cShallow = new THREE.Color(0x4f7f79);
-        for (let i = 0; i < positions.count; i++) {
-            const x = positions.getX(i);
-            const z = positions.getZ(i);
-            const h = getTerrainHeight(x, z);
-            positions.setY(i, h);
-            const t = Math.max(0, Math.min(1, (h - REEF_FLOOR + 8) / 28));
-            const c = cDeep.clone().lerp(cShallow, t);
-            colors.push(c.r, c.g, c.b);
-        }
-        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        geometry.computeVertexNormals();
-        const groundMat = new THREE.MeshStandardMaterial({
-            vertexColors: true,
-            roughness: 0.95,
-            metalness: 0.0,
-            flatShading: true,
-            emissive: new THREE.Color(0x0b2a35),
-            emissiveIntensity: 0.0
-        });
-        const ground = new THREE.Mesh(geometry, groundMat);
-        ground.receiveShadow = true;
-        scene.add(ground);
-
-        // --- Water Surface Detail ---
-        function getSurfaceWave(x, z, time) {
-            // Multi-frequency surface waves (inspired by demo_ref/other demo refs/1.html)
-            const base = Math.sin(x * 0.03 + time * 2.4) * 1.7
-                + Math.cos(z * 0.04 + time * 1.8) * 1.1
-                + Math.sin((x + z) * 0.1 + time * 3.8) * 0.45;
-            const swell = Math.sin(x * 0.012 + z * 0.009 + time * 0.9) * 0.6;
-            const micro = Math.sin((x * 0.055 - z * 0.045) + time * 1.9) * 0.18;
-            const wn = simplex.noise3D(x * 0.004, z * 0.004, time * 0.2) * 0.25;
-            return base + swell + micro + wn;
-        }
-
-        const waterGeo = new THREE.PlaneGeometry(MAP_SIZE * 1.04, MAP_SIZE * 1.04, 240, 240);
-        waterGeo.rotateX(-Math.PI / 2);
-        const waterPos = waterGeo.attributes.position;
-        const waterBase = Float32Array.from(waterPos.array);
-        for (let i = 0; i < waterPos.count; i++) {
-            const x = waterPos.getX(i);
-            const z = waterPos.getZ(i);
-            waterPos.setY(i, WATER_SURFACE_Y + getSurfaceWave(x, z, 0));
-        }
-        const waterSurface = new THREE.Mesh(
-            waterGeo,
-            new THREE.MeshPhongMaterial({
-                color: 0x0a3a4a,
-                specular: 0x55ccff,
-                shininess: 300,
-                transparent: true,
-                opacity: 0.78,
-                side: THREE.DoubleSide,
-                depthWrite: false
-            })
-        );
-        scene.add(waterSurface);
-
-        // --- Reef Obstacles ---
-        const boxGeo = new THREE.CylinderGeometry(0.8, 1.6, 1.0, 8);
-        boxGeo.translate(0, 0.5, 0);
-        const buildingMat = new THREE.MeshStandardMaterial({ color: 0x5f6366, roughness: 0.95, flatShading: true });
-        const buildingsMesh = new THREE.InstancedMesh(boxGeo, buildingMat, 2400);
-        buildingsMesh.castShadow = true;
-        buildingsMesh.receiveShadow = true;
-        const dummy = new THREE.Object3D();
-        worldState.buildingColliders = [];
-        if (!Array.isArray(worldState.mountainBuildings) || worldState.mountainBuildings.length === 0) {
-            worldState.cityBuildings = [];
-            worldState.mountainBuildings = [];
-            worldState.cabinPositions = [];
-            let attempts = 0;
-            while (worldState.mountainBuildings.length < 1300 && attempts < 42000) {
-                attempts++;
-                const x = (random() - 0.5) * 1500;
-                const z = (random() - 0.5) * 1500;
-                const y = getTerrainHeight(x, z);
-                if (y < REEF_FLOOR - 12 || y > 48) continue;
-                const clusterBoost = Math.max(0, Math.sin(x * 0.006) * Math.cos(z * 0.004));
-                const radius = 2.2 + random() * 6.2 + clusterBoost * 6;
-                const height = 3 + random() * 18 + clusterBoost * 10;
-                const reef = { x, z, halfWidth: radius, halfDepth: radius, baseHeight: y - 0.5, height: y + height };
-                worldState.mountainBuildings.push(reef);
-                worldState.cabinPositions.push({ x, z, r: radius + 3 });
+        // Repulsion from herders
+        const repel = new THREE.Vector3();
+        if (herdersActive) {
+          for (let vi = 0; vi < vehicles.length; vi++) {
+            const v = vehicles[vi];
+            const d = f.pos.distanceTo(v.position);
+            if (d < 55) {
+              tmp2.copy(f.pos).sub(v.position);
+              tmp2.y *= 0.15;
+              const strength = (1 - d / 55) ** 2 * 9.0;
+              tmp2.normalize().multiplyScalar(strength);
+              repel.add(tmp2);
             }
-            localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(worldState));
+          }
         }
 
-        let bIdx = 0;
-        worldState.mountainBuildings.forEach(b => {
-            if (bIdx >= buildingsMesh.count) return;
-            const radiusX = Math.max(1.2, b.halfWidth || 2.2);
-            const radiusZ = Math.max(1.2, b.halfDepth || radiusX);
-            const top = isFinite(b.height) ? b.height : getTerrainHeight(b.x, b.z) + 6;
-            const base = isFinite(b.baseHeight) ? b.baseHeight : getTerrainHeight(b.x, b.z) - 0.5;
-            const totalH = Math.max(2, top - base);
-            dummy.position.set(b.x, base, b.z);
-            dummy.rotation.set(0, random() * Math.PI, 0);
-            dummy.scale.set(radiusX * 1.1, totalH, radiusZ * 1.1);
-            dummy.updateMatrix();
-            buildingsMesh.setMatrixAt(bIdx++, dummy.matrix);
-            worldState.buildingColliders.push({ x: b.x, z: b.z, halfWidth: radiusX, halfDepth: radiusZ, height: base + totalH, baseHeight: base });
-        });
-        buildingsMesh.count = bIdx;
-        scene.add(buildingsMesh);
+        f.vel.addScaledVector(goal, dt);
+        f.vel.addScaledVector(swirl, dt);
+        f.vel.addScaledVector(repel, dt);
 
-        // --- Seagrass ---
-        const grassGeo = new THREE.CylinderGeometry(0.15, 0.42, 4.2, 6);
-        grassGeo.translate(0, 2.1, 0);
-        const grassMat = new THREE.MeshStandardMaterial({ color: 0x2fa36f, roughness: 0.95, flatShading: true });
-        const grassMesh = new THREE.InstancedMesh(grassGeo, grassMat, 12000);
-        grassMesh.castShadow = false;
-        let gCount = 0;
-        let attempts = 0;
-        while (gCount < 10200 && attempts < 90000) {
-            attempts++;
-            const x = (random() - 0.5) * 1700;
-            const z = (random() - 0.5) * 1700;
-            const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 8 || h > 34) continue;
-            const patch = 0.6 + 0.5 * (Math.sin((x + 240) * 0.008) * Math.cos((z - 80) * 0.006) + 1);
-            if (random() > Math.min(1.0, patch)) continue;
-            dummy.position.set(x, h, z);
-            const s = 0.65 + random() * (1.6 + patch * 0.9);
-            dummy.scale.set(0.7 * s, 0.9 + s, 0.7 * s);
-            dummy.rotation.set(0, random() * Math.PI, (random() - 0.5) * 0.25);
-            dummy.updateMatrix();
-            grassMesh.setMatrixAt(gCount++, dummy.matrix);
-        }
-        grassMesh.count = gCount;
-        scene.add(grassMesh);
+        // Speed clamp
+        const sp = f.vel.length();
+        const maxSp = 16.0;
+        if (sp > maxSp) f.vel.multiplyScalar(maxSp / sp);
 
-        // --- Coral ---
-        const coralGeo = new THREE.DodecahedronGeometry(1.2, 0);
-        const coralMat = new THREE.MeshStandardMaterial({ color: 0xbf7a5d, roughness: 0.82, flatShading: true });
-        const coralMesh = new THREE.InstancedMesh(coralGeo, coralMat, 2400);
-        let cCount = 0;
-        attempts = 0;
-        while (cCount < 1800 && attempts < 50000) {
-            attempts++;
-            const x = (random() - 0.5) * 1680;
-            const z = (random() - 0.5) * 1680;
-            const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 6 || h > 34) continue;
-            dummy.position.set(x, h + 0.6, z);
-            const patch = 0.6 + 0.5 * (Math.cos((x - 380) * 0.006) * Math.sin((z + 220) * 0.008) + 1);
-            const s = 0.9 + random() * 2.4 + patch * 1.2;
-            dummy.scale.set(s, s * (0.7 + random() * 0.4), s);
-            dummy.rotation.set(random(), random() * Math.PI, random());
-            dummy.updateMatrix();
-            coralMesh.setMatrixAt(cCount++, dummy.matrix);
-        }
-        coralMesh.count = cCount;
-        scene.add(coralMesh);
+        f.pos.addScaledVector(f.vel, dt);
 
-        // --- Shells ---
-        const shellGeo = new THREE.SphereGeometry(0.8, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.62);
-        shellGeo.translate(0, 0.1, 0);
-        const shellMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c4, roughness: 0.92, metalness: 0.05, flatShading: true });
-        const shellMesh = new THREE.InstancedMesh(shellGeo, shellMat, 2400);
-        shellMesh.castShadow = false;
-        shellMesh.receiveShadow = true;
-        let shCount = 0;
-        attempts = 0;
-        while (shCount < 1600 && attempts < 80000) {
-            attempts++;
-            const x = (random() - 0.5) * 1700;
-            const z = (random() - 0.5) * 1700;
-            const h = getTerrainHeight(x, z);
-            if (h < REEF_FLOOR - 12 || h > 55) continue;
-            const sand = 0.5 + 0.5 * simplex.noise2D(x * 0.004, z * 0.004);
-            if (random() > Math.min(1.0, sand * 0.7)) continue;
-            dummy.position.set(x, h + 0.12, z);
-            const s = 0.22 + random() * 0.85;
-            dummy.scale.set(s * (0.75 + random() * 0.5), s, s * (0.75 + random() * 0.5));
-            dummy.rotation.set((random() - 0.5) * 0.4, random() * Math.PI * 2, (random() - 0.5) * 0.4);
-            dummy.updateMatrix();
-            shellMesh.setMatrixAt(shCount++, dummy.matrix);
-        }
-        shellMesh.count = shCount;
-        scene.add(shellMesh);
+        // Keep fish below surface and above terrain
+        const surf = WATER_SURFACE_Y - 8.0;
+        if (f.pos.y > surf) f.pos.y = surf;
+        const th = getTerrainHeight(f.pos.x, f.pos.z) + 6.0;
+        if (f.pos.y < th) f.pos.y = th;
+      }
 
-        // --- Current Particles ---
-        const particleCount = 4600;
-        const particleGeo = new THREE.BufferGeometry();
-        const pPositions = new Float32Array(particleCount * 3);
-        const pVelocities = [];
-        for (let i = 0; i < particleCount; i++) {
-            pPositions[i * 3] = (Math.random() - 0.5) * (MAP_SIZE * 0.95);
-            pPositions[i * 3 + 1] = Math.random() * (MAX_ALT - REEF_FLOOR) + REEF_FLOOR;
-            pPositions[i * 3 + 2] = (Math.random() - 0.5) * (MAP_SIZE * 0.95);
-            pVelocities.push(0.45 + Math.random() * 1.6);
-        }
-        particleGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
-        const windParticles = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0x8ce9ff, size: 0.9, transparent: true, opacity: 0.5, sizeAttenuation: true }));
-        scene.add(windParticles);
+      // Write instanced transforms
+      for (let i = 0; i < fish.length; i++) {
+        const f = fish[i];
+        dummy.position.copy(f.pos);
+        const yaw = Math.atan2(f.vel.x, f.vel.z);
+        const pitch = THREE.MathUtils.clamp(-f.vel.y * 0.04, -0.35, 0.35);
+        dummy.rotation.set(pitch, yaw, 0);
+        const s = 0.75 + 0.25 * Math.sin(time * 1.2 + i);
+        dummy.scale.set(s, s, s);
+        dummy.updateMatrix();
+        fishMesh.setMatrixAt(i, dummy.matrix);
+      }
+      fishMesh.instanceMatrix.needsUpdate = true;
+    }
 
-        document.getElementById('obs-count').innerText = worldState.buildingColliders.length + " Objects";
+    function updateScenario(dt, time) {
+      scenario.tPhase += dt;
 
-        // --- Pollution Targets & Labels ---
-        const labelContainer = document.getElementById('labels-container');
-        const userListUi = document.getElementById('user-list');
-        const labelObjs = [];
-        const userElements = [];
-        const pollutionTargets = [];
-        function createPollutionMarker(target) {
-            const group = new THREE.Group();
-            const barrelYellowMat = new THREE.MeshStandardMaterial({
-                color: 0xf3d24a,
-                roughness: 0.55,
-                metalness: 0.12,
-                emissive: 0x3a2c00,
-                emissiveIntensity: 0.08
-            });
-            const barrel = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 2.2, 18), barrelYellowMat);
-            group.add(barrel);
+      if (scenario.phase === "POLLUTION") {
+        const active = pollutionClusters[scenario.clusterIndex];
+        hudPhase.textContent = "Task: Pollution Cleanup";
+        hudProgress.textContent = `${scenario.cleanedCount}/${pollutionClusters.length}`;
 
-            const ringMat = new THREE.MeshStandardMaterial({ color: 0x2f3235, roughness: 0.75, metalness: 0.15 });
-            const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.08, 8, 18), ringMat);
-            ring1.position.y = 0.76;
-            ring1.rotation.x = Math.PI / 2;
-            group.add(ring1);
-            const ring2 = ring1.clone();
-            ring2.position.y = -0.76;
-            group.add(ring2);
+        // Keep camera focused on active cluster (viewer can still orbit freely)
+        controls.target.lerp(active.center.clone().add(new THREE.Vector3(0, 10, 0)), 0.03);
 
-            const stripe = new THREE.Mesh(
-                new THREE.TorusGeometry(0.98, 0.06, 8, 18),
-                new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.85 })
-            );
-            stripe.rotation.x = Math.PI / 2;
-            group.add(stripe);
+        // Each vehicle approaches from different azimuth and then cleans
+        const ringR = 16.0;
+        const closeR = 4.0;
+        let allClose = true;
+        for (let i = 0; i < vehicles.length; i++) {
+          const v = vehicles[i];
+          const motion = v.userData.motion;
 
-            const sign = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({ color: 0xf3d24a, side: THREE.DoubleSide }));
-            sign.position.set(0, 0.2, 1.03);
-            group.add(sign);
-            const hazard = new THREE.Mesh(new THREE.RingGeometry(0.14, 0.28, 3), new THREE.MeshBasicMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide }));
-            hazard.position.copy(sign.position.clone().add(new THREE.Vector3(0, 0.0, 0.02)));
-            hazard.rotation.z = Math.PI / 6;
-            group.add(hazard);
-            group.position.copy(target.pos);
-            scene.add(group);
-            target.mesh = group;
-        }
+          const ang = (i / vehicles.length) * Math.PI * 2 + time * 0.02;
+          const approach = active.center.clone().add(new THREE.Vector3(Math.cos(ang) * ringR, 0, Math.sin(ang) * ringR));
+          approach.y = Math.max(getTerrainHeight(approach.x, approach.z) + 16, active.center.y + 5);
+          approach.y = Math.min(approach.y, WATER_SURFACE_Y - 10);
 
-        const UNDERWATER_POLLUTION_COUNT = 6;
-        const SURFACE_POLLUTION_COUNT = 18;
-        const EXPECTED_POLLUTION_COUNT = UNDERWATER_POLLUTION_COUNT + SURFACE_POLLUTION_COUNT;
+          // Final close-in point (very near source)
+          const near = active.center.clone().add(new THREE.Vector3(Math.cos(ang) * closeR, 0, Math.sin(ang) * closeR));
+          near.y = active.center.y + 1.3;
 
-        if (!isLoadedFromData || !Array.isArray(worldState.finalUsers) || worldState.finalUsers.length !== EXPECTED_POLLUTION_COUNT) {
-            worldState.finalUsers = [];
-            for (let i = 0; i < UNDERWATER_POLLUTION_COUNT; i++) {
-                const x = (random() - 0.5) * (MAP_SIZE * 0.8);
-                const z = (random() - 0.5) * (MAP_SIZE * 0.8);
-                worldState.finalUsers.push({ x, y: getTerrainHeight(x, z) + 1.1 + random() * 2.2, z, kind: 'POLLUTION', floating: false });
+          if (active.cleaned) {
+            motion.sub = "WAIT";
+            setSpray(v, false);
+            steerTo(v, approach, dt, 22);
+          } else if (motion.sub === "TRAVEL") {
+            setSpray(v, false);
+            const d = steerTo(v, approach, dt, 26).dist;
+            if (d < 8.5) motion.sub = "CLEAN_APPROACH";
+          } else if (motion.sub === "CLEAN_APPROACH") {
+            setSpray(v, false);
+            const d = steerTo(v, near, dt, 20).dist;
+            if (d < 2.8) {
+              motion.sub = "CLEAN";
+              motion.hold = 0;
             }
-            for (let i = 0; i < SURFACE_POLLUTION_COUNT; i++) {
-                const x = (random() - 0.5) * (MAP_SIZE * 0.9);
-                const z = (random() - 0.5) * (MAP_SIZE * 0.9);
-                worldState.finalUsers.push({ x, y: WATER_SURFACE_Y, z, kind: 'POLLUTION', floating: true, phase: random() * Math.PI * 2 });
+          } else if (motion.sub === "CLEAN") {
+            // Hold close, face source, spray neutralizer
+            const d = v.position.distanceTo(active.center);
+            allClose = allClose && d < 6.0;
+            v.position.lerp(near, 0.06);
+            const to = active.center.clone().sub(v.position).normalize();
+            v.rotation.y = Math.atan2(to.x, to.z);
+            v.rotation.x = THREE.MathUtils.lerp(v.rotation.x, 0.06, 0.06);
+
+            motion.hold += dt;
+            setSpray(v, true, d / 6.5);
+
+            if (motion.hold >= scenario.clusterCleanHold) {
+              motion.sub = "TRAVEL";
+              setSpray(v, false);
             }
-            localStorage.setItem(ENV_STORAGE_KEY, JSON.stringify(worldState));
+          } else {
+            setSpray(v, false);
+            steerTo(v, approach, dt, 22);
+          }
+
+          updateVehicleProps(v, dt);
         }
 
-        worldState.finalUsers.forEach((p, i) => {
-            const floating = !!p.floating;
-            const id = floating ? `POLLUTION_SURFACE_${i + 1}` : `POLLUTION_${i + 1}`;
-            const target = { id, kind: 'POLLUTION', floating, phase: p.phase || random() * Math.PI * 2, pos: new THREE.Vector3(p.x, p.y, p.z) };
-            createPollutionMarker(target);
-            pollutionTargets.push(target);
-            const d = document.createElement('div');
-            d.className='floating-label';
-            d.innerText=id;
-            labelContainer.appendChild(d);
-            labelObjs.push({id,pos:target.pos,el:d,target});
-
-            const r=document.createElement('div'); r.className='user-coord-row';
-            const coordSpan = document.createElement('span');
-            r.appendChild(coordSpan);
-            coordSpan.innerHTML = `${id} [${target.pos.x.toFixed(0)},${target.pos.y.toFixed(0)},${target.pos.z.toFixed(0)}]`;
-            userListUi.appendChild(r);
-            userElements.push({row: r, coordSpan, target});
-        });
-
-        
-        document.getElementById('btn-export-task').onclick = () => {
-             // Ensure we have the latest waypoints in the export
-             const currentData = {
-                 mapSeed: worldState.seed, // Include map seed for validation
-                 waypoints: waypoints.map(v => ({x: v.x, y: v.y, z: v.z})),
-                 tasks: taskData.tasks || taskData.paths || [],
-                 userHoverMarkers: taskData.userHoverMarkers || [],
-                 experiments: taskData.experiments || []
-             };
-             
-             // Trigger download
-             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(currentData));
-             const downloadAnchorNode = document.createElement('a');
-             downloadAnchorNode.setAttribute("href", dataStr);
-             downloadAnchorNode.setAttribute("download", "oneocean_task_data.json");
-             document.body.appendChild(downloadAnchorNode); 
-             downloadAnchorNode.click();
-             downloadAnchorNode.remove();
-        };
-
-        function distanceToTarget(dronePos, targetPos) {
-            return dronePos.distanceTo(targetPos);
+        // If enough time spraying has passed for all vehicles, mark cluster cleaned.
+        // Use a robust criterion: once the slowest vehicle finishes its hold, we flip the cluster.
+        if (!active.cleaned) {
+          const minHold = Math.min(...vehicles.map(v => v.userData.motion.hold || 0));
+          if (minHold >= scenario.clusterCleanHold && allClose) {
+            active.cleaned = true;
+            scenario.cleanedCount += 1;
+            scenario.tPhase = 0;
+          }
         }
 
-        // Player UUV
-        const playerDrone = new THREE.Group();
-        const playerHullMat = new THREE.MeshStandardMaterial({ color: 0x223f50, roughness: 0.52, metalness: 0.22 });
-        const playerHull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), playerHullMat);
-        playerHull.rotation.x = Math.PI / 2;
-        playerDrone.add(playerHull);
-        const playerNose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), playerHullMat);
-        playerNose.position.z = -4.9;
-        playerDrone.add(playerNose);
-        const playerTail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), playerHullMat);
-        playerTail.rotation.x = -Math.PI / 2;
-        playerTail.position.z = 5.35;
-        playerDrone.add(playerTail);
-        const playerBand = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
-        playerBand.rotation.x = Math.PI / 2;
-        playerBand.position.z = -0.3;
-        playerDrone.add(playerBand);
-        const playerFinMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
-        const pFinTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), playerFinMat); pFinTop.position.set(0, 1.16, 2.45); playerDrone.add(pFinTop);
-        const pFinBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), playerFinMat); pFinBottom.position.set(0, -1.02, 2.75); playerDrone.add(pFinBottom);
-        const pFinLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), playerFinMat); pFinLeft.position.set(-1.12, 0.02, 2.55); pFinLeft.rotation.z = 0.2; playerDrone.add(pFinLeft);
-        const pFinRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), playerFinMat); pFinRight.position.set(1.12, 0.02, 2.55); pFinRight.rotation.z = -0.2; playerDrone.add(pFinRight);
-        const playerPropMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
-        const playerDuctMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
-        const playerStrutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
-        const playerPropGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
-        const playerPropPositions = [
-            { x: -1.55, y: 0.95, z: 3.15 },
-            { x: 1.55, y: 0.95, z: 3.15 },
-            { x: -1.55, y: -0.95, z: 3.15 },
-            { x: 1.55, y: -0.95, z: 3.15 }
-        ];
-        const playerProps = [];
-        playerPropPositions.forEach(pos => {
-            const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), playerStrutMat);
-            strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
-            strut.rotation.z = Math.atan2(pos.x, 1.8);
-            playerDrone.add(strut);
-            const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), playerDuctMat);
-            duct.position.set(pos.x, pos.y, pos.z);
-            duct.rotation.x = Math.PI / 2;
-            playerDrone.add(duct);
-            const p = new THREE.Mesh(playerPropGeo, playerPropMat);
-            p.position.set(pos.x, pos.y, pos.z);
-            p.rotation.x = Math.PI / 2;
-            playerDrone.add(p);
-            playerProps.push(p);
-        });
-        const playerTrailFront = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.2, 16), new THREE.MeshBasicMaterial({ color: 0x7ddaff, transparent: true, opacity: 0.0, depthWrite: false }));
-        playerTrailFront.position.set(0, 0, -6.1);
-        playerTrailFront.rotation.x = Math.PI / 2;
-        playerDrone.add(playerTrailFront);
-        const playerTrailTail = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.8, 16), new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.0, depthWrite: false }));
-        playerTrailTail.position.set(0, 0, 6.8);
-        playerTrailTail.rotation.x = -Math.PI / 2;
-        playerDrone.add(playerTrailTail);
-        const playerFrontLight = new THREE.SpotLight(0xb9f0ff, 1.45, 220, Math.PI / 7, 0.55, 1.6);
-        playerFrontLight.position.set(0, 0.35, -4.7);
-        playerFrontLight.target.position.set(0, 0.2, -34);
-        playerFrontLight.castShadow = false;
-        playerDrone.add(playerFrontLight);
-        playerDrone.add(playerFrontLight.target);
-        const playerDownLight = new THREE.SpotLight(0x8dd9ff, 1.1, 150, Math.PI / 5, 0.65, 1.5);
-        playerDownLight.position.set(0, -0.45, -1.1);
-        playerDownLight.target.position.set(0, -24, -1.1);
-        playerDownLight.castShadow = false;
-        playerDrone.add(playerDownLight);
-        playerDrone.add(playerDownLight.target);
-        playerDrone.userData.props = playerProps;
-        playerDrone.userData.noseTrail = playerTrailFront;
-        playerDrone.userData.tailTrail = playerTrailTail;
-        playerDrone.userData.frontLight = playerFrontLight;
-        playerDrone.userData.downLight = playerDownLight;
-        playerDrone.scale.set(0.38, 0.38, 0.38);
-        playerDrone.position.set(0, 100, 0);
-        scene.add(playerDrone);
+        // Advance to next cluster after a brief hold
+        if (active.cleaned && scenario.tPhase > scenario.transitionHold) {
+          scenario.clusterIndex += 1;
+          scenario.tPhase = 0;
+          for (const v of vehicles) {
+            v.userData.motion.sub = "TRAVEL";
+            v.userData.motion.hold = 0;
+          }
+          if (scenario.clusterIndex >= pollutionClusters.length) {
+            scenario.phase = "FISH";
+            scenario.tPhase = 0;
+          }
+        }
+      } else if (scenario.phase === "FISH") {
+        hudPhase.textContent = "Task: Biological Protection";
+        hudProgress.textContent = "Herd fish to deep sea";
 
-        // --- 4. EXPERIMENTS ---
-        let appMode = 'FREE'; const expGroup = new THREE.Group(); scene.add(expGroup);
-        let expDrones = []; const startPt = new THREE.Vector3(0, 100, 0);
-        
-        // Helper function to check collision with building (matches generate_path.py Building.check_collision)
-        function checkPointCollisionWithBuilding(pos) {
-            const buffer = 10.0; // Same as generate_path.py
-            for (let b of worldState.buildingColliders) {
-                const halfW = b.halfWidth || 0;
-                const halfD = b.halfDepth || 0;
-                const bHeight = b.height || 0;
-                const bY = b.baseHeight || 0;
-                
-                // Calculate AABB bounds (same as generate_path.py)
-                const min_x = b.x - halfW - buffer;
-                const max_x = b.x + halfW + buffer;
-                const min_z = b.z - halfD - buffer;
-                const max_z = b.z + halfD + buffer;
-                const min_y = bY;
-                const max_y = bHeight + buffer; // height is total height, max_y = height + buffer
-                
-                // Check collision (same logic as Python)
-                if (min_x <= pos.x && pos.x <= max_x &&
-                    min_z <= pos.z && pos.z <= max_z &&
-                    min_y <= pos.y && pos.y <= max_y) {
-                    return { colliding: true, building: b, max_y: max_y };
-                }
-            }
-            return { colliding: false };
-        }
-        
-        // Generate waypoints with same logic as generate_path.py
-        function generateDefaultWaypoints() {
-            const waypointsList = [startPt.clone()]; // START_POINT
-            
-            // For each finalUsers, create hover point above user
-            for (let u of worldState.finalUsers) {
-                const userPos = new THREE.Vector3(u.x, u.y, u.z);
-                
-                // Hover ABOVE user (same as generate_path.py)
-                const targetPos = userPos.clone();
-                targetPos.y += 20.0; // Increased hover height
-                
-                // Final check for target (same as generate_path.py)
-                const collision = checkPointCollisionWithBuilding(targetPos);
-                if (collision.colliding) {
-                    targetPos.y = collision.max_y + 10.0;
-                }
-                
-                waypointsList.push(targetPos);
-            }
-            
-            return waypointsList;
-        }
-        
-        // Use waypoints from taskData if available, otherwise generate default waypoints
-        // Note: waypoints is already declared earlier, update it only if not already set from taskData
-        if (!waypoints || waypoints.length === 0) {
-            waypoints = generateDefaultWaypoints();
+        // Focus between fish center and deep target (still orbitable)
+        const schoolCenter = fish.reduce((acc, f) => acc.add(f.pos), new THREE.Vector3()).multiplyScalar(1 / fish.length);
+        controls.target.lerp(schoolCenter, 0.03);
+
+        // Move vehicles behind school, pushing toward deepSeaTarget
+        const forward = deepSeaTarget.clone().sub(schoolCenter);
+        forward.y = 0;
+        const forwardLen = Math.max(1e-6, forward.length());
+        forward.multiplyScalar(1 / forwardLen);
+        const behind = forward.clone().multiplyScalar(-38);
+        const lateral = new THREE.Vector3(-forward.z, 0, forward.x);
+
+        for (let i = 0; i < vehicles.length; i++) {
+          const v = vehicles[i];
+          const lane = (i - (vehicles.length - 1) / 2) / Math.max(1, (vehicles.length - 1) / 2);
+          const tgt = schoolCenter.clone()
+            .add(behind)
+            .add(lateral.clone().multiplyScalar(lane * 26));
+          tgt.y = Math.min(WATER_SURFACE_Y - 12, Math.max(getTerrainHeight(tgt.x, tgt.z) + 18, schoolCenter.y));
+          setSpray(v, false);
+          steerTo(v, tgt, dt, 22);
+          updateVehicleProps(v, dt);
         }
 
-        function resetSim() {
-            expGroup.clear(); expDrones = []; playerDrone.visible = true;
-            controls.enabled = true; document.getElementById('legend-box').style.display='none';
-            // Clear all button active states
-            document.getElementById('btn-atc-fly').classList.remove('active');
-            document.getElementById('btn-atc-static').classList.remove('active');
-            document.getElementById('btn-task-fly').classList.remove('active');
-            document.getElementById('btn-task-static').classList.remove('active');
+        updateFish(dt, time, true);
+
+        // Finish when school reaches deep target vicinity
+        const dGoal = schoolCenter.distanceTo(deepSeaTarget);
+        if (dGoal < 55 && scenario.tPhase > 10) {
+          scenario.phase = "DONE";
+          scenario.tPhase = 0;
         }
-
-        // Helper function to create text sprite
-        function createTextSprite(text, color = 0xffffff, bgColor = 0x000000) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            context.font = 'Bold 24px Arial';
-            const metrics = context.measureText(text);
-            const textWidth = metrics.width;
-            
-            canvas.width = textWidth + 20;
-            canvas.height = 40;
-            context.fillStyle = `rgba(${(bgColor >> 16) & 0xff}, ${(bgColor >> 8) & 0xff}, ${bgColor & 0xff}, 0.8)`;
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            
-            context.font = 'Bold 24px Arial';
-            context.fillStyle = `rgb(${(color >> 16) & 0xff}, ${(color >> 8) & 0xff}, ${color & 0xff})`;
-            context.textAlign = 'center';
-            context.textBaseline = 'middle';
-            context.fillText(text, canvas.width / 2, canvas.height / 2);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            texture.needsUpdate = true;
-            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-            const sprite = new THREE.Sprite(spriteMaterial);
-            sprite.scale.set(15, 6, 1);
-            return sprite;
+      } else {
+        hudPhase.textContent = "Tasks Completed";
+        hudProgress.textContent = "All done";
+        updateFish(dt, time, false);
+        for (const v of vehicles) {
+          setSpray(v, false);
+          updateVehicleProps(v, dt);
         }
+      }
+    }
 
-        function addMarker(pos, color, text = null) {
-            const g = new THREE.Group();
-            // Use circle/sphere instead of cylinder for start/end markers
-            const circle = new THREE.Mesh(
-                new THREE.SphereGeometry(3, 16, 16), 
-                new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.8})
-            );
-            circle.position.y = 0;
-            g.add(circle);
-            // Add a ring around it
-            const ring = new THREE.Mesh(
-                new THREE.TorusGeometry(4, 0.3, 8, 16),
-                new THREE.MeshBasicMaterial({color, transparent:true, opacity:0.6})
-            );
-            ring.rotation.x = Math.PI / 2;
-            g.add(ring);
-            
-            // Add text label only if provided
-            if (text) {
-                const textSprite = createTextSprite(text, color, 0x000000);
-                textSprite.position.set(0, 8, 0);
-                g.add(textSprite);
-            }
-            
-            g.position.copy(pos);
-            expGroup.add(g);
-        }
-        
-        // Create UUV model (same style as index.html)
-        function createDroneModel(color) {
-            const droneGroup = new THREE.Group();
-            const bodyMat = new THREE.MeshStandardMaterial({ color: color || 0x223f50, roughness: 0.52, metalness: 0.22 });
-            const hull = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.3, 9.5, 24), bodyMat);
-            hull.rotation.x = Math.PI / 2;
-            droneGroup.add(hull);
-            const nose = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 14), bodyMat);
-            nose.position.z = -4.9;
-            droneGroup.add(nose);
-            const tail = new THREE.Mesh(new THREE.ConeGeometry(1.15, 2.2, 18), bodyMat);
-            tail.rotation.x = -Math.PI / 2;
-            tail.position.z = 5.35;
-            droneGroup.add(tail);
-            const band = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.14, 10, 28), new THREE.MeshStandardMaterial({ color: 0x2f576d, roughness: 0.6 }));
-            band.rotation.x = Math.PI / 2;
-            band.position.z = -0.3;
-            droneGroup.add(band);
-            const finMat = new THREE.MeshStandardMaterial({ color: 0x2e5f74, roughness: 0.62 });
-            const finTop = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.35, 1.65), finMat); finTop.position.set(0, 1.16, 2.45); droneGroup.add(finTop);
-            const finBottom = new THREE.Mesh(new THREE.BoxGeometry(0.24, 1.1, 1.25), finMat); finBottom.position.set(0, -1.02, 2.75); droneGroup.add(finBottom);
-            const finLeft = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finLeft.position.set(-1.12, 0.02, 2.55); finLeft.rotation.z = 0.2; droneGroup.add(finLeft);
-            const finRight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.16, 1.35), finMat); finRight.position.set(1.12, 0.02, 2.55); finRight.rotation.z = -0.2; droneGroup.add(finRight);
-            const propGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.06, 11);
-            const propMat = new THREE.MeshBasicMaterial({ color: 0x1f1f1f, transparent: true, opacity: 0.9 });
-            const ductMat = new THREE.MeshStandardMaterial({ color: 0x3a4752, roughness: 0.48, metalness: 0.35 });
-            const strutMat = new THREE.MeshStandardMaterial({ color: 0x4a5660, roughness: 0.55, metalness: 0.22 });
-            const propPositions = [
-                { x: -1.55, y: 0.95, z: 3.15 },
-                { x: 1.55, y: 0.95, z: 3.15 },
-                { x: -1.55, y: -0.95, z: 3.15 },
-                { x: 1.55, y: -0.95, z: 3.15 }
-            ];
-            const props = [];
-            propPositions.forEach(pos => {
-                const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.15, 8), strutMat);
-                strut.position.set(pos.x * 0.74, pos.y * 0.74, pos.z - 0.35);
-                strut.rotation.z = Math.atan2(pos.x, 1.8);
-                droneGroup.add(strut);
-                const duct = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.66, 0.35, 18), ductMat);
-                duct.position.set(pos.x, pos.y, pos.z);
-                duct.rotation.x = Math.PI / 2;
-                droneGroup.add(duct);
-                const p = new THREE.Mesh(propGeo, propMat);
-                p.position.set(pos.x, pos.y, pos.z);
-                p.rotation.x = Math.PI / 2;
-                droneGroup.add(p);
-                props.push(p);
-            });
-            
-            droneGroup.add(new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 4, 0xff0000));
-            droneGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 4, 0x00ff00));
-            droneGroup.add(new THREE.ArrowHelper(new THREE.Vector3(0,0,-1), new THREE.Vector3(0,0,0), 4, 0x0000ff));
-            const trailFront = new THREE.Mesh(new THREE.ConeGeometry(0.45, 2.2, 16), new THREE.MeshBasicMaterial({ color: 0x7ddaff, transparent: true, opacity: 0.0, depthWrite: false }));
-            trailFront.position.set(0, 0, -6.1);
-            trailFront.rotation.x = Math.PI / 2;
-            droneGroup.add(trailFront);
-            const trailTail = new THREE.Mesh(new THREE.ConeGeometry(0.55, 2.8, 16), new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.0, depthWrite: false }));
-            trailTail.position.set(0, 0, 6.8);
-            trailTail.rotation.x = -Math.PI / 2;
-            droneGroup.add(trailTail);
-            const frontLight = new THREE.SpotLight(0xb9f0ff, 1.15, 170, Math.PI / 7, 0.55, 1.6);
-            frontLight.position.set(0, 0.35, -4.7);
-            frontLight.target.position.set(0, 0.2, -28);
-            frontLight.castShadow = false;
-            droneGroup.add(frontLight);
-            droneGroup.add(frontLight.target);
-            const downLight = new THREE.SpotLight(0x8dd9ff, 0.85, 120, Math.PI / 5, 0.65, 1.5);
-            downLight.position.set(0, -0.45, -1.1);
-            downLight.target.position.set(0, -20, -1.1);
-            downLight.castShadow = false;
-            droneGroup.add(downLight);
-            droneGroup.add(downLight.target);
-            droneGroup.userData.props = props;
-            droneGroup.userData.noseTrail = trailFront;
-            droneGroup.userData.tailTrail = trailTail;
-            droneGroup.userData.frontLight = frontLight;
-            droneGroup.userData.downLight = downLight;
-            droneGroup.scale.set(0.38, 0.38, 0.38);
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const time = clock.getElapsedTime();
 
-            // Add high-contrast wireframe box for visibility
-            const boundsGeo = new THREE.BoxGeometry(5, 2, 5); // Slightly larger than drone
-            const edges = new THREE.EdgesGeometry(boundsGeo);
-            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
-            const wireframe = new THREE.LineSegments(edges, lineMat);
-            droneGroup.add(wireframe);
+      skyDome.position.copy(camera.position);
+      skyUniforms.time.value = time;
 
-            return droneGroup;
-        }
-        
-        function createArrow(color) {
-            // For static mode, still use arrow
-            const g = new THREE.Group(); const m = new THREE.MeshBasicMaterial({color});
-            const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3,8), m); s.rotation.x=Math.PI/2; s.position.z=-1.5;
-            const h = new THREE.Mesh(new THREE.ConeGeometry(0.8,2,16), m); h.rotation.x=Math.PI/2; h.position.z=1;
-            g.add(s); g.add(h); return g;
-        }
+      // Update water waves
+      const waterArr = waterSurface.geometry.attributes.position.array;
+      for (let i = 0; i < waterArr.length; i += 3) {
+        const bx = waterBase[i];
+        const bz = waterBase[i + 2];
+        waterArr[i + 1] = WATER_SURFACE_Y + getSurfaceWave(bx, bz, time);
+      }
+      waterSurface.geometry.attributes.position.needsUpdate = true;
+      if (((time * 60) | 0) % 6 === 0) waterSurface.geometry.computeVertexNormals();
 
-        const TUBE_SEGMENTS_MIN = 400;
-        const TUBE_SEGMENTS_MAX = 900;
-        const TUBE_RADIAL_SEGMENTS = 8;
+      // Current particle drift
+      const cArr = currentGeo.attributes.position.array;
+      for (let i = 0; i < currentCount; i++) {
+        const idx = i * 3;
+        const p = new THREE.Vector3(cArr[idx], cArr[idx + 1], cArr[idx + 2]);
+        const wind = getCurrentAt(p, time);
+        cArr[idx] += wind.x * 0.12 * dt * cVel[i];
+        cArr[idx + 2] += wind.z * 0.12 * dt * cVel[i];
+        // wrap
+        if (cArr[idx] > MAP_HALF_SIZE) cArr[idx] = -MAP_HALF_SIZE;
+        if (cArr[idx] < -MAP_HALF_SIZE) cArr[idx] = MAP_HALF_SIZE;
+        if (cArr[idx + 2] > MAP_HALF_SIZE) cArr[idx + 2] = -MAP_HALF_SIZE;
+        if (cArr[idx + 2] < -MAP_HALF_SIZE) cArr[idx + 2] = MAP_HALF_SIZE;
+      }
+      currentGeo.attributes.position.needsUpdate = true;
 
-        function getTubeSegments(curve) {
-            try {
-                const byLen = Math.floor(curve.getLength() * 1.3);
-                const byPts = curve.points ? Math.floor(curve.points.length * 1.5) : 0;
-                return Math.max(TUBE_SEGMENTS_MIN, Math.min(TUBE_SEGMENTS_MAX, Math.max(byLen, byPts)));
-            } catch (e) {
-                return TUBE_SEGMENTS_MIN;
-            }
-        }
+      // Update pollution visuals (even after phase change, keep them visible/fading)
+      for (const cl of pollutionClusters) updatePollutionCluster(cl, dt, time);
 
-        const DISPLAY_PATH_MAX_POINTS = 900;
-        const DISPLAY_SMOOTH_ITERATIONS = 1;
-        const DISPLAY_SMOOTH_LOCK_RADIUS = 10.0;
-        const DISPLAY_SMOOTH_FORCE_RADIUS = 25.0;
-        const DISPLAY_SMOOTH_MAX_SHIFT = 6.0;
+      // Depth-aware lighting shimmer (subtle)
+      const depthRef = controls.target.y;
+      const depthNorm = Math.max(0, Math.min(1, (depthRef - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)));
+      const shimmer = 0.985 + 0.012 * Math.sin(time * 0.8) + 0.008 * Math.sin(time * 1.6 + 1.3);
+      const baseHemi = 0.26 + (0.36 + depthNorm * 0.72) * 0.58;
+      const baseDir = 0.2 + (0.36 + depthNorm * 0.72) * 0.65;
+      hemiLight.intensity = baseHemi * shimmer;
+      dirLight.intensity = baseDir * shimmer;
+      groundMat.emissiveIntensity = (0.015 + 0.02 * (1 - depthNorm)) * (0.65 + 0.35 * Math.sin(time * 0.9));
 
-        function getDisplaySmoothingCenters() {
-            const centers = [];
-            if (Array.isArray(waypoints)) {
-                waypoints.forEach(w => {
-                    if (w && isFinite(w.x) && isFinite(w.z)) centers.push({ x: w.x, z: w.z });
-                });
-            }
-            if (taskData && Array.isArray(taskData.userHoverMarkers)) {
-                taskData.userHoverMarkers.forEach(m => {
-                    if (m && isFinite(m.x) && isFinite(m.z)) centers.push({ x: m.x, z: m.z });
-                });
-            }
-            return centers;
-        }
+      updateScenario(dt, time);
+      hudTime.textContent = `t=${time.toFixed(1)}s`;
+      controls.update();
+      renderer.render(scene, camera);
+    }
 
-        function isNearCenters(p, centers, radius) {
-            const r2 = radius * radius;
-            for (const c of centers) {
-                const dx = p.x - c.x;
-                const dz = p.z - c.z;
-                if (dx * dx + dz * dz <= r2) return true;
-            }
-            return false;
-        }
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-        function decimatePoints(pts, maxPoints, centers) {
-            if (!Array.isArray(pts) || pts.length <= maxPoints) return pts;
-            const stride = Math.max(1, Math.ceil((pts.length - 1) / (maxPoints - 1)));
-
-            const idx = new Set();
-            for (let i = 0; i < pts.length; i += stride) idx.add(i);
-            idx.add(0); idx.add(pts.length - 1);
-
-            if (Array.isArray(centers) && centers.length > 0) {
-                const forceR2 = DISPLAY_SMOOTH_FORCE_RADIUS * DISPLAY_SMOOTH_FORCE_RADIUS;
-                for (const c of centers) {
-                    let bestI = 0;
-                    let bestD2 = Infinity;
-                    for (let i = 0; i < pts.length; i++) {
-                        const dx = pts[i].x - c.x;
-                        const dz = pts[i].z - c.z;
-                        const d2 = dx * dx + dz * dz;
-                        if (d2 < bestD2) { bestD2 = d2; bestI = i; }
-                    }
-                    if (bestD2 <= forceR2) idx.add(bestI);
-                }
-            }
-
-            const sorted = Array.from(idx).sort((a, b) => a - b);
-            return sorted.map(i => pts[i]);
-        }
-
-        function enforceDisplayClearance(p) {
-            try {
-                const minY = getTerrainHeight(p.x, p.z) + 5.0;
-                if (p.y < minY) p.y = minY;
-                const col = checkPointCollisionWithBuilding(p);
-                if (col && col.colliding) {
-                    p.y = Math.max(p.y, col.max_y + 10.0);
-                }
-            } catch (e) {
-                // Best-effort only
-            }
-        }
-
-        function smoothDisplayPoints(pts) {
-            if (!Array.isArray(pts) || pts.length < 3) return pts;
-            const centers = getDisplaySmoothingCenters();
-
-            let cur = decimatePoints(pts, DISPLAY_PATH_MAX_POINTS, centers);
-            for (let iter = 0; iter < DISPLAY_SMOOTH_ITERATIONS; iter++) {
-                const next = [cur[0]];
-                for (let i = 1; i < cur.length - 1; i++) {
-                    const p0 = cur[i - 1];
-                    const p1 = cur[i];
-                    const p2 = cur[i + 1];
-                    if (isNearCenters(p1, centers, DISPLAY_SMOOTH_LOCK_RADIUS)) {
-                        next.push(p1);
-                        continue;
-                    }
-                    const cand = new THREE.Vector3(
-                        0.2 * p0.x + 0.6 * p1.x + 0.2 * p2.x,
-                        0.2 * p0.y + 0.6 * p1.y + 0.2 * p2.y,
-                        0.2 * p0.z + 0.6 * p1.z + 0.2 * p2.z
-                    );
-                    const dx = cand.x - p1.x;
-                    const dz = cand.z - p1.z;
-                    const d = Math.sqrt(dx * dx + dz * dz);
-                    if (d > DISPLAY_SMOOTH_MAX_SHIFT) {
-                        const s = DISPLAY_SMOOTH_MAX_SHIFT / d;
-                        cand.x = p1.x + dx * s;
-                        cand.z = p1.z + dz * s;
-                    }
-                    enforceDisplayClearance(cand);
-                    next.push(cand);
-                }
-                next.push(cur[cur.length - 1]);
-                cur = next;
-            }
-
-            return cur;
-        }
-        function createTube(curve, color, op=0.8, radius=0.6) {
-            const segments = getTubeSegments(curve);
-            curve.arcLengthDivisions = Math.max(curve.arcLengthDivisions || 200, segments * 2);
-            const geo = new THREE.TubeGeometry(curve, segments, radius, TUBE_RADIAL_SEGMENTS, false);
-            const mat = new THREE.MeshLambertMaterial({color, transparent:true, opacity:op});
-            expGroup.add(new THREE.Mesh(geo, mat));
-        }
-
-        // Current field
-        function getWindAt(pos, time) {
-            const scale = 0.0022;
-            const timeScale = 0.09;
-            const bx = simplex.noise2D(pos.x * 0.0012, time * 0.06);
-            const bz = simplex.noise2D(pos.z * 0.0012 + 100, time * 0.06);
-            let wind = new THREE.Vector3(bx, 0, bz).normalize().multiplyScalar(4.8);
-            wind.x += simplex.noise3D(pos.x * scale, pos.z * scale, time * timeScale) * 1.8;
-            wind.z += simplex.noise3D(pos.x * scale + 100, pos.z * scale + 100, time * timeScale) * 1.8;
-            const th = getTerrainHeight(pos.x, pos.z);
-            let occ = 1.0;
-            if (pos.y < th + 24) occ *= 0.25 + 0.75 * Math.max(0, (pos.y - th) / 24);
-            wind.multiplyScalar(occ);
-            if (wind.length() > 11) wind.multiplyScalar(11 / wind.length());
-            return wind;
-        }
-
-        // Pathfinding
-        function checkLineCol(p1, p2) {
-            const dist = p1.distanceTo(p2); const steps = Math.ceil(dist/2);
-            const step = new THREE.Vector3().subVectors(p2,p1).divideScalar(steps);
-            const c = p1.clone();
-            for(let i=0;i<steps;i++){
-                c.add(step);
-                for(let b of worldState.buildingColliders) {
-                    // Use correct building structure (halfWidth, halfDepth, height, baseHeight)
-                    const halfW = b.halfWidth || (b.w ? b.w/2 : 0);
-                    const halfD = b.halfDepth || (b.d ? b.d/2 : 0);
-                    const bHeight = b.height || (b.h ? b.h : 0);
-                    const bY = b.baseHeight || (b.y ? b.y : 0);
-                    
-                    if(c.x > b.x - halfW - 2 && c.x < b.x + halfW + 2 && 
-                       c.z > b.z - halfD - 2 && c.z < b.z + halfD + 2 && 
-                       c.y > bY && c.y < bHeight + 2) return b;
-                }
-            }
-            return null;
-        }
-        function genPath(pts, type) {
-            const res = [pts[0]];
-            for(let i=0;i<pts.length-1;i++) {
-                const s=pts[i], e=pts[i+1];
-                const obs = checkLineCol(s, e);
-                if(obs) {
-                    // Extract height/base info safely to prevent NaN
-                    const obsH = obs.height !== undefined ? obs.height : (obs.h || 0);
-                    const obsY = obs.baseHeight !== undefined ? obs.baseHeight : (obs.y || 0);
-
-                    if(type==='ACS') {
-                        const mid=new THREE.Vector3().lerpVectors(s,e,0.5);
-                        mid.y=Math.min(s.y,e.y)-10; mid.x+=30; res.push(mid);
-                    } else if(type==='TD3') {
-                        const mid=new THREE.Vector3().lerpVectors(s,e,0.5);
-                        // Jump over building
-                        const det=new THREE.Vector3(obs.x, Math.max(s.y, obsY + obsH + 5), obs.z);
-                        res.push(det);
-                    } else { // DS - Smarter detour
-                        const mid=new THREE.Vector3().lerpVectors(s,e,0.5);
-                        // Simple detour logic: check height, if too high go around, else over
-                        if(obsH < 40) {
-                             mid.y = obsY + obsH + 10; // Go over
-                        } else { 
-                            // Go around
-                            const dir=new THREE.Vector3().subVectors(e,s).normalize();
-                            const perp=new THREE.Vector3(-dir.z,0,dir.x).multiplyScalar(50); // Detour side
-                            mid.add(perp);
-                        }
-                        res.push(mid);
-                    }
-                }
-                res.push(e);
-            }
-            // For CatmullRom, we need more points if path is simple
-            if (res.length < 2) res.push(pts[pts.length-1]);
-            
-            const c=new THREE.CatmullRomCurve3(res); 
-            c.tension=(type==='ACS'?0:0.5); 
-            return c;
-        }
-
-        // Task 1: Inspection
-        function setupATC(mode) {
-            resetSim(); appMode = (mode==='FLY'?'ATC_FLY':'ATC_STATIC'); playerDrone.visible=false;
-            document.getElementById('mode-val').innerText = `INSPECTION (${mode})`;
-            document.getElementById('legend-box').style.display='block';
-            document.getElementById('legend-content').innerHTML = `<div class="legend-item"><div class="legend-color" style="background:#0088ff"></div>Optimized</div><div class="legend-item"><div class="legend-color" style="background:#ff0000"></div>Baseline</div>`;
-            
-            // Update button active states
-            document.getElementById('btn-atc-fly').classList.toggle('active', mode==='FLY');
-            document.getElementById('btn-atc-static').classList.toggle('active', mode==='STATIC');
-            document.getElementById('btn-task-fly').classList.remove('active');
-            document.getElementById('btn-task-static').classList.remove('active');
-            
-            // Add markers for start and end
-            addMarker(waypoints[0], 0x00ff00, "START"); 
-            addMarker(waypoints[waypoints.length-1], 0xff0000, "END");
-            
-            let cF, cP;
-            
-            // Try to load tasks from experiments data first
-            const baselineExp = taskData.experiments ? taskData.experiments.find(e => e.name === 'INSPECT_BASELINE') : null;
-            const optimizedExp = taskData.experiments ? taskData.experiments.find(e => e.name === 'INSPECT_OPTIMIZED') : null;
-            const baselineTasks = baselineExp ? (baselineExp.tasks || baselineExp.paths) : null;
-            const optimizedTasks = optimizedExp ? (optimizedExp.tasks || optimizedExp.paths) : null;
-            
-            if (baselineExp && optimizedExp && baselineTasks && optimizedTasks) {
-                console.log("Using pre-calculated inspection tasks from data (multi-trajectory)");
-                
-                // Baseline Trajectories (Red)
-                baselineTasks.forEach((taskPoints, idx) => {
-                    const pts = smoothDisplayPoints(taskPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                    const c = new THREE.CatmullRomCurve3(pts);
-                    createTube(c, 0xff0000, 0.6, 0.15);
-                    if (idx === 0) cP = c;
-                });
-
-                // Optimized Trajectories (Blue)
-                optimizedTasks.forEach((taskPoints, idx) => {
-                    const pts = smoothDisplayPoints(taskPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                    const c = new THREE.CatmullRomCurve3(pts);
-                    createTube(c, 0x0088ff, 0.6, 0.15);
-                    if (idx === 0) cF = c;
-                });
-            } else if (baselineExp && optimizedExp && baselineExp.points && optimizedExp.points) {
-                console.log("Using pre-calculated inspection tasks from data (single-trajectory)");
-                const ptsP = smoothDisplayPoints(baselineExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                const ptsF = smoothDisplayPoints(optimizedExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                cP = new THREE.CatmullRomCurve3(ptsP);
-                cF = new THREE.CatmullRomCurve3(ptsF);
-                createTube(cF,0x0088ff); createTube(cP,0xff0000);
-            } else {
-                console.log("Generating inspection tasks on the fly");
-                const baseC = genPath(waypoints, 'ACS-DS'); const clean = smoothDisplayPoints(baseC.getPoints(300));
-                const noisy = clean.map((p,i)=> {
-                    const np=p.clone(); if(i>20&&i<280){ np.y+=Math.sin(i*0.1)*8; np.x+=Math.sin(i*0.05)*12; } return np;
-                });
-                cF=new THREE.CatmullRomCurve3(clean); cP=new THREE.CatmullRomCurve3(smoothDisplayPoints(noisy));
-                createTube(cF,0x0088ff); createTube(cP,0xff0000);
-            }
-
-            // Add markers for each hover point on the task (from JSON)
-            if (taskData.userHoverMarkers && taskData.userHoverMarkers.length > 0) {
-                taskData.userHoverMarkers.forEach(marker => {
-                    const pos = new THREE.Vector3(marker.x, marker.y, marker.z);
-                    addMarker(pos, 0x1d9bd1); // No text for user hover points
-                });
-            }
-
-            if(mode==='FLY') {
-                // Use drone models instead of arrows for FPV mode
-                const d1={m:createDroneModel(0x0088ff),c:cF,t:0,isT:true}; 
-                const d2={m:createDroneModel(0xff0000),c:cP,t:0};
-                expDrones=[d1,d2]; expGroup.add(d1.m); expGroup.add(d2.m);
-            } else {
-                // Static mode: camera focuses on start point (waypoints[0])
-                controls.target.copy(waypoints[0]); 
-                camera.position.set(waypoints[0].x+100, waypoints[0].y+150, waypoints[0].z+100);
-            }
-        }
-
-        // Task 2: Cleanup
-        function setupTask(mode) {
-            resetSim(); appMode = (mode==='FLY'?'TASK_FLY':'TASK_STATIC'); playerDrone.visible=false;
-            document.getElementById('mode-val').innerText = `CLEANUP (${mode})`;
-            document.getElementById('legend-box').style.display='block';
-            document.getElementById('legend-content').innerHTML = `<div class="legend-item"><div class="legend-color" style="background:#ffff00"></div>Sweep</div><div class="legend-item"><div class="legend-color" style="background:#00ff00"></div>Patrol</div><div class="legend-item"><div class="legend-color" style="background:#0088ff"></div>Coverage</div>`;
-
-            // Update button active states
-            document.getElementById('btn-task-fly').classList.toggle('active', mode==='FLY');
-            document.getElementById('btn-task-static').classList.toggle('active', mode==='STATIC');
-            document.getElementById('btn-atc-fly').classList.remove('active');
-            document.getElementById('btn-atc-static').classList.remove('active');
-
-            // Add markers for start and end
-            addMarker(waypoints[0], 0x00ff00, "START"); 
-            addMarker(waypoints[waypoints.length-1], 0xff0000, "END");
-            
-            let c1, c2, c3;
-            
-            // Try to load tasks from experiments data first
-            const sweepExp = taskData.experiments ? taskData.experiments.find(e => e.name === 'CLEANUP_SWEEP') : null;
-            const patrolExp = taskData.experiments ? taskData.experiments.find(e => e.name === 'CLEANUP_PATROL') : null;
-            const coverageExp = taskData.experiments ? taskData.experiments.find(e => e.name === 'CLEANUP_COVERAGE') : null;
-            const sweepTasks = sweepExp ? (sweepExp.tasks || sweepExp.paths) : null;
-            const patrolTasks = patrolExp ? (patrolExp.tasks || patrolExp.paths) : null;
-            const coverageTasks = coverageExp ? (coverageExp.tasks || coverageExp.paths) : null;
-            
-            if (sweepExp && patrolExp && coverageExp && sweepTasks) {
-                console.log("Using pre-calculated cleanup tasks from data (multi-trajectory)");
-                
-                 // Sweep (Yellow)
-                 sweepTasks.forEach((taskPoints, idx) => {
-                    const pts = smoothDisplayPoints(taskPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                    const c = new THREE.CatmullRomCurve3(pts);
-                    createTube(c, 0xffff00, 0.6, 0.15);
-                    if (idx === 0) c1 = c;
-                });
-
-                // Patrol (Green)
-                (patrolTasks || []).forEach((taskPoints, idx) => {
-                    const pts = smoothDisplayPoints(taskPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                    const c = new THREE.CatmullRomCurve3(pts);
-                    createTube(c, 0x00ff00, 0.6, 0.15);
-                    if (idx === 0) c2 = c;
-                });
-
-                // Coverage (Blue)
-                (coverageTasks || []).forEach((taskPoints, idx) => {
-                    const pts = smoothDisplayPoints(taskPoints.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                    const c = new THREE.CatmullRomCurve3(pts);
-                    createTube(c, 0x0088ff, 0.6, 0.15);
-                    if (idx === 0) c3 = c;
-                });
-            } else if (sweepExp && patrolExp && coverageExp && sweepExp.points) {
-                console.log("Using pre-calculated cleanup tasks from data (single-trajectory)");
-                const pts1 = smoothDisplayPoints(sweepExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                const pts2 = smoothDisplayPoints(patrolExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                const pts3 = smoothDisplayPoints(coverageExp.points.map(p => new THREE.Vector3(p.x, p.y, p.z)));
-                c1 = new THREE.CatmullRomCurve3(pts1);
-                c2 = new THREE.CatmullRomCurve3(pts2);
-                c3 = new THREE.CatmullRomCurve3(pts3);
-                createTube(c1,0xffff00,0.6); createTube(c2,0x00ff00,0.6); createTube(c3,0x0088ff,0.9);
-            } else {
-                console.log("Generating cleanup tasks on the fly");
-                const rawC1 = genPath(waypoints,'ACS'); 
-                const rawC2 = genPath(waypoints,'TD3'); 
-                const rawC3 = genPath(waypoints,'ACS-DS');
-                
-                const pts1 = smoothDisplayPoints(rawC1.getPoints(300)); c1 = new THREE.CatmullRomCurve3(pts1);
-                const pts2 = smoothDisplayPoints(rawC2.getPoints(300)); c2 = new THREE.CatmullRomCurve3(pts2);
-                const pts3 = smoothDisplayPoints(rawC3.getPoints(300)); c3 = new THREE.CatmullRomCurve3(pts3);
-                createTube(c1,0xffff00,0.6); createTube(c2,0x00ff00,0.6); createTube(c3,0x0088ff,0.9);
-            }
-            
-            // Add markers for each hover point on the task (from JSON)
-            if (taskData.userHoverMarkers && taskData.userHoverMarkers.length > 0) {
-                taskData.userHoverMarkers.forEach(marker => {
-                    const pos = new THREE.Vector3(marker.x, marker.y, marker.z);
-                    addMarker(pos, 0x1d9bd1); // No text for user hover points
-                });
-            }
-
-            if(mode==='FLY') {
-                // Use drone models instead of arrows for FPV mode
-                const d1={m:createDroneModel(0xffff00),c:c1,t:0}; 
-                const d2={m:createDroneModel(0x00ff00),c:c2,t:0};
-                const d3={m:createDroneModel(0x0088ff),c:c3,t:0,isT:true};
-                expDrones=[d1,d2,d3]; expGroup.add(d1.m); expGroup.add(d2.m); expGroup.add(d3.m);
-            } else {
-                // Static mode: camera focuses on start point (waypoints[0])
-                controls.target.copy(waypoints[0]); 
-                camera.position.set(waypoints[0].x+200, waypoints[0].y+200, waypoints[0].z+200);
-            }
-        }
-
-        // --- Loop ---
-        const keys={w:0,s:0,a:0,d:0,ArrowUp:0,ArrowDown:0,ArrowLeft:0,ArrowRight:0};
-        window.onkeydown=e=>{if(keys.hasOwnProperty(e.key))keys[e.key]=1;}; window.onkeyup=e=>{if(keys.hasOwnProperty(e.key))keys[e.key]=0;};
-        const controls = new THREE.OrbitControls(camera, renderer.domElement); controls.enableDamping=true;
-        const vel = new THREE.Vector3();
-        let frameCount = 0;
-        let currentLookAt = new THREE.Vector3(); // For smooth camera lookAt
-        let _waterNormalsFrame = 0;
-
-        function animate() {
-            requestAnimationFrame(animate); const dt=clock.getDelta();
-            frameCount++;
-            const time = clock.getElapsedTime();
-
-            skyDome.position.copy(camera.position);
-            skyUniforms.time.value = time;
-
-            const waterArr = waterSurface.geometry.attributes.position.array;
-            for (let i = 0; i < waterArr.length; i += 3) {
-                const bx = waterBase[i];
-                const bz = waterBase[i + 2];
-                waterArr[i + 1] = WATER_SURFACE_Y + getSurfaceWave(bx, bz, time);
-            }
-            waterSurface.geometry.attributes.position.needsUpdate = true;
-            _waterNormalsFrame = (_waterNormalsFrame + 1) % 6;
-            if (_waterNormalsFrame === 0) waterSurface.geometry.computeVertexNormals();
-
-            if(appMode.includes('FLY')) {
-                expDrones.forEach(d => {
-                    // Slower movement speed for better visibility
-                    d.t += dt * 0.012; if(d.t>1) d.t=0;
-                    const p = d.c.getPointAt(d.t); const np = d.c.getPointAt(Math.min(d.t+0.01,1));
-                    
-                    // Offset drone visually to ride ON TOP of path
-                    const visualPos = p.clone();
-                    visualPos.y += 2.0;
-                    d.m.position.copy(visualPos);
-                    
-                    // Smooth Rotation using Quaternion Slerp
-                    const direction = new THREE.Vector3().subVectors(np, p);
-                    if (direction.lengthSq() > 0.001) {
-                        direction.normalize();
-                        const mx = new THREE.Matrix4().lookAt(direction, new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0));
-                        const qt = new THREE.Quaternion().setFromRotationMatrix(mx);
-                        // Slerp current rotation towards target rotation (factor 0.1 for smoothness)
-                        if (!d.m.quaternion) d.m.quaternion = new THREE.Quaternion();
-                        d.m.quaternion.slerp(qt, 0.1);
-                        const localForward = direction.clone();
-                        const pseudoSpeed = 34;
-                        if (d.m.userData && d.m.userData.noseTrail) {
-                            d.m.userData.noseTrail.material.opacity = 0.08;
-                            d.m.userData.tailTrail.material.opacity = 0.62;
-                            d.m.userData.noseTrail.scale.setScalar(0.9);
-                            d.m.userData.tailTrail.scale.setScalar(1.25);
-                            d.m.userData.frontLight.intensity = 1.5;
-                            d.m.userData.downLight.intensity = 0.85;
-                        }
-                        if (d.m.userData && Array.isArray(d.m.userData.props)) {
-                            d.m.userData.props.forEach((prop, idx) => {
-                                prop.rotation.y += (0.6 + pseudoSpeed * 0.03) * (idx % 2 === 0 ? 1 : -1);
-                            });
-                        }
-                    }
-                    
-                    if(d.isT) {
-                        const fwd=new THREE.Vector3().subVectors(np,p).normalize();
-                        if(fwd.lengthSq()>0.1) {
-                            // Further camera distance (80 units behind)
-                            // Look ahead point: p + fwd * 20
-                            const lookTarget = p.clone().add(fwd.clone().multiplyScalar(20));
-                            
-                            const cp=p.clone().add(fwd.multiplyScalar(-80)).add(new THREE.Vector3(0,30,0));
-                            
-                            // Smooth camera position
-                            camera.position.lerp(cp, 0.05); 
-                            
-                            // Smooth camera lookAt
-                            if (currentLookAt.lengthSq() < 0.1) currentLookAt.copy(lookTarget);
-                            
-                            currentLookAt.lerp(lookTarget, 0.05); // Smoothly interpolate look target
-                            camera.lookAt(currentLookAt);
-                        }
-                    }
-                });
-            } else if(appMode==='FREE') {
-                const yaw=playerDrone.rotation.y;
-                const fwd=new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
-                const rgt=new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0),yaw);
-                let acc=new THREE.Vector3();
-                if(keys.w)acc.add(fwd); if(keys.s)acc.sub(fwd); if(keys.a)acc.sub(rgt); if(keys.d)acc.add(rgt);
-                if(keys.ArrowLeft)playerDrone.rotation.y+=2*dt; if(keys.ArrowRight)playerDrone.rotation.y-=2*dt;
-                if(acc.lengthSq()>0) acc.normalize().multiplyScalar(30);
-                let va=0; if(keys.ArrowUp)va=15; if(keys.ArrowDown)va=-15;
-                vel.x+=acc.x*dt; vel.z+=acc.z*dt; vel.y+=va*dt; vel.multiplyScalar(0.95);
-                playerDrone.position.add(vel.clone().multiplyScalar(dt));
-                // Surface constraint + buoyancy: can move on surface, but cannot leave the water
-                const SURFACE_DRAFT = 1.2;
-                const capY = WATER_SURFACE_Y + getSurfaceWave(playerDrone.position.x, playerDrone.position.z, time) - SURFACE_DRAFT;
-                if (playerDrone.position.y > capY) {
-                    playerDrone.position.y = capY;
-                    if (vel.y > 0) vel.y = 0;
-                }
-                if (!keys.ArrowDown && playerDrone.position.y > capY - 6) {
-                    playerDrone.position.y = THREE.MathUtils.lerp(playerDrone.position.y, capY, 0.08);
-                    if (vel.y < 0) vel.y *= 0.35;
-                }
-                const forwardSpeed = vel.dot(fwd);
-                const sideSpeed = vel.dot(rgt);
-                const targetPitch = THREE.MathUtils.clamp(-forwardSpeed * 0.0042, -0.22, 0.22);
-                const targetRoll = THREE.MathUtils.clamp(-(keys.ArrowLeft ? 0.12 : 0) + (keys.ArrowRight ? 0.12 : 0) - sideSpeed * 0.0012, -0.16, 0.16);
-                playerDrone.rotation.x = THREE.MathUtils.lerp(playerDrone.rotation.x, targetPitch, 0.16);
-                playerDrone.rotation.z = THREE.MathUtils.lerp(playerDrone.rotation.z, targetRoll, 0.16);
-                if (playerDrone.position.y > WATER_SURFACE_Y - 10) {
-                    const dx = 18;
-                    const x = playerDrone.position.x;
-                    const z = playerDrone.position.z;
-                    const wxp = getSurfaceWave(x + dx, z, time);
-                    const wxm = getSurfaceWave(x - dx, z, time);
-                    const wzp = getSurfaceWave(x, z + dx, time);
-                    const wzm = getSurfaceWave(x, z - dx, time);
-                    const slopeX = (wxp - wxm) / (2 * dx);
-                    const slopeZ = (wzp - wzm) / (2 * dx);
-                    const wavePitch = THREE.MathUtils.clamp(-slopeZ * 0.32, -0.08, 0.08);
-                    const waveRoll = THREE.MathUtils.clamp(slopeX * 0.32, -0.08, 0.08);
-                    playerDrone.rotation.x += wavePitch * 0.35;
-                    playerDrone.rotation.z += waveRoll * 0.35;
-                }
-                const minY = getTerrainHeight(playerDrone.position.x, playerDrone.position.z) + 2;
-                if(playerDrone.position.y < minY) playerDrone.position.y = minY;
-                const speedMag = vel.length();
-                const trailPower = Math.min(1, speedMag / 40);
-                playerDrone.userData.noseTrail.material.opacity = Math.max(0, -forwardSpeed / 35) * 0.65;
-                playerDrone.userData.noseTrail.scale.setScalar(0.8 + trailPower * 0.7);
-                playerDrone.userData.tailTrail.material.opacity = Math.max(0, forwardSpeed / 35) * 0.78;
-                playerDrone.userData.tailTrail.scale.setScalar(0.9 + trailPower * 1.1);
-                playerDrone.userData.frontLight.intensity = 0.9 + trailPower * 1.1;
-                playerDrone.userData.downLight.intensity = 0.7 + (1 - Math.max(0, Math.min(1, (playerDrone.position.y - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)))) * 1.05;
-                playerDrone.userData.props.forEach((prop, idx) => {
-                    prop.rotation.y += (0.6 + speedMag * 0.03) * (idx % 2 === 0 ? 1 : -1);
-                });
-                controls.target.copy(playerDrone.position);
-                controls.update();
-            } else controls.update();
-
-            let depthReference = playerDrone.position;
-            if (appMode.includes('FLY') && expDrones.length > 0) {
-                const tracked = expDrones.find(d => d.isT) || expDrones[0];
-                if (tracked && tracked.m) depthReference = tracked.m.position;
-            }
-            const depthNorm = Math.max(0, Math.min(1, (depthReference.y - REEF_FLOOR) / (MAX_ALT - REEF_FLOOR)));
-            const depthDark = 0.36 + depthNorm * 0.72;
-            const shimmer = 0.985
-                + 0.012 * Math.sin(time * 0.8)
-                + 0.008 * Math.sin(time * 1.6 + 1.3);
-            const baseHemi = 0.26 + depthDark * 0.58;
-            const baseDir = 0.2 + depthDark * 0.65;
-            hemiLight.intensity = baseHemi * shimmer;
-            dirLight.intensity = baseDir * shimmer;
-            scene.fog.density = 0.0016 + (1 - depthNorm) * 0.0013;
-            groundMat.emissiveIntensity = (0.015 + 0.02 * (1 - depthNorm)) * (0.65 + 0.35 * Math.sin(time * 0.9));
-
-            // Wind & Particles Update
-            const wind = getWindAt(playerDrone.position, time);
-
-            const parr=windParticles.geometry.attributes.position.array;
-            for(let i=0;i<particleCount;i++){
-                let px=parr[i*3],py=parr[i*3+1],pz=parr[i*3+2];
-                const pw=getWindAt(new THREE.Vector3(px,py,pz),time); const sm=pVelocities[i];
-                px+=pw.x*dt*sm*1.6; py+=pw.y*dt*sm*0.65; pz+=pw.z*dt*sm*1.6;
-                if(py<REEF_FLOOR)py+=MAX_ALT-REEF_FLOOR; if(py>MAX_ALT)py-=MAX_ALT-REEF_FLOOR;
-                if(Math.abs(px)>MAP_HALF_SIZE)px=-px; if(Math.abs(pz)>MAP_HALF_SIZE)pz=-pz;
-                parr[i*3]=px; parr[i*3+1]=py; parr[i*3+2]=pz;
-            }
-            windParticles.geometry.attributes.position.needsUpdate=true;
-
-            // Labels Update
-            pollutionTargets.forEach(target => {
-                if (target.mesh) {
-                    if (target.floating) {
-                        target.pos.y = WATER_SURFACE_Y + getSurfaceWave(target.pos.x, target.pos.z, time) - 0.25;
-                    }
-                    target.mesh.position.copy(target.pos);
-                    target.mesh.rotation.y += 0.0016;
-                    if (target.floating) {
-                        const dx = 10;
-                        const x = target.pos.x;
-                        const z = target.pos.z;
-                        const wxp = getSurfaceWave(x + dx, z, time);
-                        const wxm = getSurfaceWave(x - dx, z, time);
-                        const wzp = getSurfaceWave(x, z + dx, time);
-                        const wzm = getSurfaceWave(x, z - dx, time);
-                        const slopeX = (wxp - wxm) / (2 * dx);
-                        const slopeZ = (wzp - wzm) / (2 * dx);
-                        target.mesh.rotation.x = THREE.MathUtils.clamp(-slopeZ * 0.22, -0.12, 0.12);
-                        target.mesh.rotation.z = THREE.MathUtils.clamp(slopeX * 0.22, -0.12, 0.12);
-                    }
-                }
-            });
-
-            labelObjs.forEach(o=>{
-                const p=o.pos.clone(); p.project(camera);
-                const x=(p.x*.5+.5)*window.innerWidth; const y=(p.y*-.5+.5)*window.innerHeight;
-                o.el.style.display = (p.z<1&&x>0&&x<window.innerWidth&&y>0&&y<window.innerHeight) ? 'block' : 'none';
-                o.el.style.transform = `translate(-50%,-100%) translate(${x}px,${y}px)`;
-            });
-
-            // Update pollution distance list
-            if (frameCount % 10 === 0) {
-                let dp = playerDrone.position;
-                if (appMode.includes('FLY') && expDrones.length > 0) {
-                   const tracked = expDrones.find(d => d.isT) || expDrones[0];
-                   if (tracked && tracked.m) dp = tracked.m.position;
-                }
-                
-                if (userElements && userElements.length > 0) {
-                    userElements.forEach(userData => {
-                        const targetPos = userData.target.pos;
-                        const distance = distanceToTarget(dp, targetPos);
-                        const id = userData.target.id;
-                        const posStr = `[${targetPos.x.toFixed(0)},${targetPos.y.toFixed(1)},${targetPos.z.toFixed(0)}]`;
-                        userData.coordSpan.innerHTML = `${id} ${posStr} <span style="color:#6f5cff">| Distance: ${distance.toFixed(1)} m</span>`;
-                        userData.row.title = `Distance ${distance.toFixed(1)} m`;
-                    });
-                }
-            }
-
-            renderer.render(scene, camera);
-        }
-        window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth,window.innerHeight); });
-        
-        // Listeners
-        document.getElementById('btn-atc-fly').onclick=()=>setupATC('FLY');
-        document.getElementById('btn-atc-static').onclick=()=>setupATC('STATIC');
-        document.getElementById('btn-task-fly').onclick=()=>setupTask('FLY');
-        document.getElementById('btn-task-static').onclick=()=>setupTask('STATIC');
-        
-        // Auto-start is now handled in the task data loading callback
-        
-        // --- Data Management Handlers ---
-        const fileInputEnv = document.getElementById('file-input');
-        const fileInputPath = document.createElement('input');
-        fileInputPath.type = 'file';
-        fileInputPath.accept = '.json';
-        fileInputPath.style.display = 'none';
-        document.body.appendChild(fileInputPath);
-        
-        document.getElementById('btn-import').onclick=()=>{
-            // Import task data
-            fileInputPath.click();
-        };
-        
-        document.getElementById('btn-import-env').onclick=()=>{
-            // Import environment data
-            fileInputEnv.click();
-        };
-        
-        fileInputPath.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const contents = e.target.result;
-                    const parsed = JSON.parse(contents);
-                    // Basic validation
-                    if (parsed.tasks || parsed.paths || parsed.waypoints || parsed.experiments) {
-                        localStorage.setItem(TASK_STORAGE_KEY, contents);
-                        loadTaskDataIntoState(parsed);
-                        alert("Task data imported successfully.");
-                        setupATC('STATIC');
-                    } else {
-                        alert("Invalid task data file.");
-                    }
-                } catch(err) { console.error(err); alert("Error parsing file: " + err.message); }
-            };
-            reader.readAsText(file);
-            // Reset file input
-            fileInputPath.value = '';
-        });
-
-        // Import environment data
-        fileInputEnv.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const contents = e.target.result;
-                    const parsed = JSON.parse(contents);
-                    // Basic validation
-                    if (parsed.seed && parsed.mountainBuildings) {
-                        localStorage.setItem(ENV_STORAGE_KEY, contents);
-                        alert("Environment data imported successfully. Page will reload to apply changes.");
-                        location.reload(); // Reload to apply
-                    } else {
-                        alert("Invalid map data file.");
-                    }
-                } catch(err) { console.error(err); alert("Error parsing file"); }
-            };
-            reader.readAsText(file);
-            // Reset file input
-            fileInputEnv.value = '';
-        });
-
-        document.getElementById('btn-snapshot').onclick=()=>{ 
-            renderer.render(scene,camera); 
-            html2canvas(document.body).then(c=>{ 
-                const a=document.createElement('a'); 
-                a.download='shot.png'; 
-                a.href=c.toDataURL(); 
-                a.click(); 
-            }); 
-        };
-
-
-        animate();
-    } catch(e) { console.error(e); }
-    </script>
+    // Initialize fish transforms (hidden under task 1 at first, but present)
+    updateFish(0.016, 0.0, false);
+    animate();
+  </script>
 </body>
 </html>
+

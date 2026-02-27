@@ -5,8 +5,8 @@ This folder keeps the `demo_ref` deployment style and provides an underwater web
 ## Files
 
 - `index.html`: ocean environment page (UUV control + currents + pollutant targets)
-- `tasks.html`: task example page (inspection/cleanup task visualizations)
-- `example/`: static screenshots and GIF previews
+- `tasks.html`: task showcase page (observation-only; orbit camera)
+- `example/`: static screenshots (index + tasks)
 
 > JSON data files are no longer tracked in this repository. The demo now runs with built-in defaults and optional import/export.
 
