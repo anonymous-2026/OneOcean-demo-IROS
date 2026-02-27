@@ -395,7 +395,7 @@
                         <td style="padding: 4px 8px;">Yaw rotation</td>
                     </tr>
                 </table>
-                <div style="margin-top: 8px; font-size: 11px;">Switch between <strong>Manual</strong> and <strong>Stabilized</strong> modes using buttons in the top-left panel.</div>
+                <div style="margin-top: 8px; font-size: 11px;">Controls use a single <strong>Manual</strong> mode (keyboard).</div>
             </div>
 
             <div id="welcome-checkbox">
@@ -471,7 +471,7 @@
         <div class="section-title">PHYSICS CONFIG</div>
         <div class="disclaimer">
             * Manual: direct velocity-style control.<br>
-            * Stabilized: damped control with smoother attitude response.
+            * Single-mode manual control (no mode switching).
         </div>
         <div class="ui-row">
             <span class="ui-label">MAX_ACCEL:</span>
@@ -505,9 +505,8 @@
 
         <!-- Control Mode Switch -->
         <div class="ui-label" style="margin-bottom: 5px;">CONTROLS</div>
-        <div class="btn-group">
-            <button id="btn-mode-simple" class="mode-btn active">Manual</button>
-            <button id="btn-mode-pid" class="mode-btn">Stabilized</button>
+        <div class="disclaimer" style="margin-top: 4px;">
+            Manual keyboard control (single mode)
         </div>
 
         <div class="ui-label" style="margin-top: 10px; margin-bottom: 5px;">CAMERA</div>
@@ -1279,7 +1278,7 @@
         }
 
         // --- Main Vars ---
-        let controlMode = 'SIMPLE'; 
+        const controlMode = 'SIMPLE';
         const droneDynamics = new DroneDynamics();
 
         // --- Controls ---
@@ -1303,8 +1302,6 @@
         const btnImport = document.getElementById('btn-import');
         const btnReset = document.getElementById('btn-reset');
         const fileInput = document.getElementById('file-input');
-        const btnSimple = document.getElementById('btn-mode-simple');
-        const btnPID = document.getElementById('btn-mode-pid');
         const modeVal = document.getElementById('ctrl-mode-val');
         const batVal = document.getElementById('battery-val');
         const batBar = document.getElementById('battery-bar');
@@ -1319,29 +1316,7 @@
         }
         // Initialize view mode to FPV
         setViewMode('FPV');
-        function setControlMode(mode) {
-            controlMode = mode;
-            modeVal.innerText = mode === 'CONTROL' ? 'STABILIZED' : 'MANUAL';
-            if (mode === 'SIMPLE') {
-                btnSimple.classList.add('active'); btnPID.classList.remove('active');
-                droneGroup.rotation.set(0, droneGroup.rotation.y, 0); 
-                velocity.set(0,0,0); 
-            } else {
-                btnSimple.classList.remove('active'); btnPID.classList.add('active');
-                droneDynamics.reset();
-                droneDynamics.euler.y = droneGroup.rotation.y; 
-                droneDynamics.velocity.copy(velocity); 
-                // Calculate hover throttle based on current position (account for gravity)
-                // If at 100m, base throttle should be around 0.55 to hover
-                const currentHeight = droneGroup.position.y;
-                droneDynamics.baseThrottle = 0.55; // Standard hover throttle
-                droneDynamics.targetHeight = currentHeight; // Set target to current height exactly
-                droneDynamics.targetPosition.set(droneGroup.position.x, currentHeight, droneGroup.position.z); // Set target position
-                // Reset height PID completely to prevent oscillation
-                droneDynamics.heightPID.integral = 0;
-                droneDynamics.heightPID.prevError = 0;
-            }
-        }
+        modeVal.innerText = 'MANUAL';
 
         btnOrbit.addEventListener('click', () => setViewMode('ORBIT'));
         btnFPV.addEventListener('click', () => setViewMode('FPV'));
@@ -1356,8 +1331,6 @@
             });
         }
 
-        btnSimple.addEventListener('click', () => setControlMode('SIMPLE'));
-        btnPID.addEventListener('click', () => setControlMode('CONTROL')); 
         btnSnap.addEventListener('click', () => { 
             // Ensure all user labels are visible for snapshot
             labels.forEach(l => {
