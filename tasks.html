@@ -15,7 +15,7 @@
             left: 20px;
             background: rgba(240, 240, 240, 0.95);
             padding: 15px;
-            width: 340px;
+            width: 260px;
             max-height: 90vh;
             overflow-y: auto;
             border-radius: 2px;
@@ -61,8 +61,18 @@
         }
 
         .ui-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; color: #555; align-items: center; }
+        .task-note { font-size: 10px; color: #555; line-height: 1.5; margin-top: 8px; }
+        .task-note .ui-label { font-weight: 600; }
+        .task-note-value { display: block; margin-top: 2px; word-wrap: break-word; }
         .ui-label { font-weight: 600; }
         .ui-value { font-family: monospace; }
+        #hud-status.status-running { color: #e67e22; font-weight: bold; }
+        #hud-status.status-done { color: #27ae60; font-weight: bold; }
+        .section-hint { font-weight: normal; color: #999; font-size: 10px; }
+        .source-status-list { font-size: 10px; color: #555; line-height: 1.5; font-family: monospace; }
+        .source-status-list .done { color: #27ae60; }
+        .source-status-list .cleaning { color: #e67e22; }
+        .source-status-list .pending { color: #666; }
 
         /* Back button must match index.html "Open Tasks" button */
         #btn-back {
@@ -100,17 +110,22 @@
 
         <div class="section-title">Task Summary</div>
         <div class="task-desc" id="task-desc">
-            Multiple UUVs each clean one surface pollution source: approach a yellow barrel, stay close for ~3–4s to neutralize diffusion, then move to the next source until all are cleaned.
+            Multiple UUVs each clean one surface pollution source: approach a yellow barrel, stay close to neutralize diffusion, then move to the next source until all are cleaned.
         </div>
+        <div class="task-note"><span class="ui-label">Note:</span> <span id="hud-note" class="task-note-value">—</span></div>
 
         <div class="divider"></div>
 
         <div class="section-title">Status</div>
         <div class="ui-row"><span class="ui-label">ACTIVE</span><span class="ui-value" id="hud-active">Task 1</span></div>
+        <div class="ui-row"><span class="ui-label">Task Status</span><span class="ui-value" id="hud-status">In Progress</span></div>
         <div class="ui-row"><span class="ui-label">UUVs</span><span class="ui-value" id="hud-uuvs">6</span></div>
         <div class="ui-row"><span class="ui-label">PROGRESS</span><span class="ui-value" id="hud-progress">0%</span></div>
         <div class="ui-row"><span class="ui-label">TIME</span><span class="ui-value" id="hud-time">t=0.0s</span></div>
-        <div class="ui-row"><span class="ui-label">NOTE</span><span class="ui-value" id="hud-note">—</span></div>
+
+        <div class="divider"></div>
+        <div class="section-title">Target / Source Status <span id="hud-sources-title" class="section-hint">(Task 1)</span></div>
+        <div id="hud-sources" class="source-status-list"></div>
     </div>
 
     <button id="btn-back">&larr; Back to Index</button>
@@ -811,7 +826,7 @@
             vehicle.userData.downLight.intensity = 1.05 + (1 - depthNorm) * 0.9;
         }
 
-        function steerToYawOnly(vehicle, targetPos, dt, speed) {
+        function steerToYawOnly(vehicle, targetPos, dt, speed, maxYawRate) {
             const motion = vehicle.userData.motion;
             const pos = vehicle.position;
             const to = targetPos.clone().sub(pos);
@@ -821,8 +836,19 @@
             const desired = to.multiplyScalar(speed);
             motion.vel.lerp(desired, 0.12);
             pos.addScaledVector(motion.vel, dt);
-            const yaw = Math.atan2(motion.vel.x, motion.vel.z);
-            if (isFinite(yaw)) vehicle.rotation.set(0, yaw, 0);
+            const desiredYaw = Math.atan2(motion.vel.x, motion.vel.z);
+            if (!isFinite(desiredYaw)) return { dist };
+            if (maxYawRate > 0) {
+                let curYaw = vehicle.rotation.y;
+                let delta = desiredYaw - curYaw;
+                while (delta > Math.PI) delta -= Math.PI * 2;
+                while (delta < -Math.PI) delta += Math.PI * 2;
+                const maxDelta = maxYawRate * dt;
+                delta = THREE.MathUtils.clamp(delta, -maxDelta, maxDelta);
+                vehicle.rotation.y = curYaw + delta;
+            } else {
+                vehicle.rotation.set(0, desiredYaw, 0);
+            }
 
             // constraints
             const surf = WATER_SURFACE_Y - 2.0;
@@ -884,11 +910,42 @@
         const task3Group = new THREE.Group(); scene.add(task3Group);
 
         // =========================
-        // Task 1: Surface pollution cleanup
+        // Task 1: Surface pollution cleanup (larger scale, surface float, labels)
         // =========================
+        const TASK1_SCALE = 1.9;
+        const TASK1_STANDOFF = 4.2;
+
+        function makeTextSprite(text, fontSize) {
+            const w = 512, h = 160;
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            const font = fontSize || 48;
+            ctx.font = 'bold ' + font + 'px Arial,sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 4;
+            ctx.strokeText(text, w / 2, h / 2);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(text, w / 2, h / 2);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.premultiplyAlpha = false;
+            const mat = new THREE.SpriteMaterial({
+                map: tex,
+                transparent: true,
+                depthTest: true,
+                depthWrite: false
+            });
+            const sprite = new THREE.Sprite(mat);
+            sprite.scale.set(18, 5.6, 1);
+            return sprite;
+        }
+
         function makeSurfaceCluster(id, x, z) {
             const center = new THREE.Vector3(x, WATER_SURFACE_Y, z);
             const barrel = createPollutionBarrel();
+            barrel.scale.set(TASK1_SCALE, TASK1_SCALE, TASK1_SCALE);
             barrel.position.copy(center);
             barrel.userData.phase = random() * Math.PI * 2;
             task1Group.add(barrel);
@@ -939,13 +996,18 @@
             g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
             const pts = new THREE.Points(g, new THREE.PointsMaterial({
                 color: 0x76ff99,
-                size: 1.35,
+                size: 1.35 * TASK1_SCALE,
                 transparent: true,
                 opacity: 0.55,
                 depthWrite: false,
                 blending: THREE.AdditiveBlending
             }));
             task1Group.add(pts);
+
+            const label = makeTextSprite(id, 56);
+            label.position.copy(center);
+            label.position.y += 4.2;
+            task1Group.add(label);
 
             return {
                 id,
@@ -954,6 +1016,7 @@
                 slick,
                 plume,
                 pts,
+                label,
                 arr,
                 base,
                 vel,
@@ -967,30 +1030,37 @@
         }
 
         const surfaceClusters = [
-            makeSurfaceCluster('S1', -60, 20),
-            makeSurfaceCluster('S2', -10, -50),
-            makeSurfaceCluster('S3', 55, 30),
-            makeSurfaceCluster('S4', 20, 80),
-            makeSurfaceCluster('S5', 90, -70),
-            makeSurfaceCluster('S6', -110, 85),
-            makeSurfaceCluster('S7', 5, 10)
+            makeSurfaceCluster('S1', -28, 12),
+            makeSurfaceCluster('S2', -6, -24),
+            makeSurfaceCluster('S3', 26, 16),
+            makeSurfaceCluster('S4', 10, 38),
+            makeSurfaceCluster('S5', 42, -34),
+            makeSurfaceCluster('S6', -52, 42),
+            makeSurfaceCluster('S7', 4, 6)
         ];
 
         const task1Vehicles = [];
-        const TASK1_UUVS = 6;
+        const TASK1_UUVS = 4;
+        const TASK1_SURFACE_Y = WATER_SURFACE_Y - 0.6;
         for (let i = 0; i < TASK1_UUVS; i++) {
             const u = createIndexUUV();
+            u.scale.set(0.38 * TASK1_SCALE, 0.38 * TASK1_SCALE, 0.38 * TASK1_SCALE);
             u.userData.motion = { vel: new THREE.Vector3(), state: 'SEEK', t: 0, targetId: null, idx: i };
+            const lbl = makeTextSprite('U' + (i + 1), 48);
+            u.userData.label = lbl;
             task1Group.add(u);
+            task1Group.add(lbl);
             task1Vehicles.push(u);
         }
 
         function resetTask1() {
-            const startRing = 160;
+            const startRing = 72;
+            const t0 = clock.getElapsedTime();
             for (let i = 0; i < task1Vehicles.length; i++) {
                 const ang = (i / task1Vehicles.length) * Math.PI * 2;
                 const u = task1Vehicles[i];
-                u.position.set(Math.cos(ang) * startRing, WATER_SURFACE_Y - 16, Math.sin(ang) * startRing);
+                const x = Math.cos(ang) * startRing, z = Math.sin(ang) * startRing;
+                u.position.set(x, WATER_SURFACE_Y + getSurfaceWave(x, z, t0), z);
                 u.rotation.set(0, -ang, 0);
                 u.userData.motion.vel.set(0,0,0);
                 u.userData.motion.state = 'SEEK';
@@ -1024,11 +1094,11 @@
             else c.cleanTime += dt;
 
             const slickWob = 1.0 + 0.06 * Math.sin(time * 1.2 + c.center.x * 0.02);
-            c.slick.scale.setScalar(c.radius * slickWob);
+            c.slick.scale.setScalar(c.radius * slickWob * TASK1_SCALE);
             c.slick.material.color.setHex(c.cleaned ? 0x6aa6ad : 0x39ff7a);
             c.slick.material.opacity = c.cleaned ? Math.max(0, 0.14 - c.cleanTime * 0.035) : 0.12 + 0.06 * Math.sin(time * 1.0);
 
-            c.plume.scale.setScalar(Math.max(1.0, c.radius * 0.48));
+            c.plume.scale.setScalar(Math.max(1.0, c.radius * 0.48) * TASK1_SCALE);
             c.plume.material.color.setHex(c.cleaned ? 0x6aa6ad : 0x4cff87);
             c.plume.material.opacity = c.cleaned ? Math.max(0, 0.10 - c.cleanTime * 0.03) : 0.10;
 
@@ -1061,6 +1131,10 @@
             posAttr.needsUpdate = true;
             c.pts.material.color.setHex(c.cleaned ? 0x9fb4b7 : 0x76ff99);
             c.pts.material.opacity = c.cleaned ? Math.max(0, 0.45 - c.cleanTime * 0.06) : 0.55;
+            if (c.label) {
+                c.label.position.set(c.barrel.position.x, c.barrel.position.y + 4.2, c.barrel.position.z);
+                c.label.visible = !c.cleaned;
+            }
         }
 
         function pickNextSurfaceCluster(vehicleIdx, vehiclePos) {
@@ -1095,12 +1169,13 @@
                         setSpray(u, false, time);
                     } else {
                         const ang = (i / task1Vehicles.length) * Math.PI * 2;
-                        const offset = new THREE.Vector3(Math.cos(ang) * 4.6, 0, Math.sin(ang) * 4.6);
+                        const offset = new THREE.Vector3(Math.cos(ang) * TASK1_STANDOFF, 0, Math.sin(ang) * TASK1_STANDOFF);
                         const go = tgt.barrel.position.clone().add(offset);
-                        go.y = WATER_SURFACE_Y - 14.0;
+                        go.y = WATER_SURFACE_Y + getSurfaceWave(go.x, go.z, time);
                         const d = steerToYawOnly(u, go, dt, 36).dist;
+                        u.position.y = WATER_SURFACE_Y + getSurfaceWave(u.position.x, u.position.z, time);
                         setSpray(u, false, time);
-                        if (d < 2.9) { m.state = 'SPRAY'; m.t = 0; }
+                        if (d < 1.8) { m.state = 'SPRAY'; m.t = 0; }
                     }
                 } else if (m.state === 'SPRAY') {
                     const tgt = surfaceClusters.find(c => c.id === m.targetId) || null;
@@ -1110,9 +1185,11 @@
                         setSpray(u, false, time);
                     } else {
                         const source = tgt.barrel.position.clone();
-                        const near = source.clone();
-                        near.y = WATER_SURFACE_Y - 14.0;
-                        u.position.lerp(near, 0.14);
+                        const dir = u.position.clone().sub(source).normalize();
+                        const near = source.clone().add(dir.multiplyScalar(TASK1_STANDOFF));
+                        near.y = WATER_SURFACE_Y + getSurfaceWave(near.x, near.z, time);
+                        u.position.lerp(near, 0.12);
+                        u.position.y = WATER_SURFACE_Y + getSurfaceWave(u.position.x, u.position.z, time);
                         const to = source.clone().sub(u.position).normalize();
                         u.rotation.set(0, Math.atan2(to.x, to.z), 0);
                         setSpray(u, true, time);
@@ -1129,13 +1206,29 @@
                     m.state = 'SEEK';
                 }
 
+                u.position.y = WATER_SURFACE_Y + getSurfaceWave(u.position.x, u.position.z, time);
                 updateUUVProps(u, dt, time);
+                if (u.userData.label) {
+                    u.userData.label.position.copy(u.position);
+                    u.userData.label.position.y += 3.6;
+                }
             }
 
             const cleaned = surfaceClusters.filter(c => c.cleaned).length;
             const p = surfaceClusters.length === 0 ? 0 : cleaned / surfaceClusters.length;
             hud.progress.textContent = `${Math.round(p * 100)}% (${cleaned}/${surfaceClusters.length})`;
             hud.note.textContent = 'Each UUV handles one surface source at a time.';
+
+            let html = '';
+            for (const c of surfaceClusters) {
+                const pos = '(' + Math.round(c.center.x) + ', ' + Math.round(c.center.z) + ')';
+                let status, cls;
+                if (c.cleaned) { status = 'Done @ ' + pos; cls = 'done'; }
+                else if (c.assignedTo !== null) { status = 'U' + (c.assignedTo + 1) + ' cleaning @ ' + pos; cls = 'cleaning'; }
+                else { status = 'Pending @ ' + pos; cls = 'pending'; }
+                html += '<div class="' + cls + '">' + c.id + ': ' + status + '</div>';
+            }
+            hud.sources.innerHTML = html || '—';
         }
 
         // =========================
@@ -1156,36 +1249,53 @@
             task2Group.add(glow);
             return { center, barrel, glow };
         })();
+        const TASK2_SCALE = 1.9;
+        underwaterTarget.barrel.scale.set(TASK2_SCALE, TASK2_SCALE, TASK2_SCALE);
+        underwaterTarget.glow.scale.set(TASK2_SCALE, TASK2_SCALE, TASK2_SCALE);
+        underwaterTarget.label = makeTextSprite('Target', 48);
+        underwaterTarget.label.position.copy(underwaterTarget.center);
+        underwaterTarget.label.position.y += 4;
+        task2Group.add(underwaterTarget.label);
 
         const task2Vehicles = [];
         const TASK2_UUVS = 5;
         for (let i = 0; i < TASK2_UUVS; i++) {
             const u = createIndexUUV();
+            u.scale.set(0.38 * TASK2_SCALE, 0.38 * TASK2_SCALE, 0.38 * TASK2_SCALE);
             u.userData.motion = { vel: new THREE.Vector3(), idx: i };
+            const lbl = makeTextSprite('U' + (i + 1), 48);
+            u.userData.label = lbl;
             task2Group.add(u);
+            task2Group.add(lbl);
             task2Vehicles.push(u);
         }
 
-        const task2State = { phase: 'APPROACH', t: 0.0 };
+        const task2State = { phase: 'APPROACH', t: 0.0, barrelY: 0, disperseTargets: null, fifthTouchedOnce: false };
 
         function resetTask2() {
             const c = underwaterTarget.center.clone();
-            underwaterTarget.barrel.position.copy(c);
-            underwaterTarget.glow.position.copy(c);
+            task2State.barrelY = c.y;
+            underwaterTarget.barrel.position.set(c.x, c.y, c.z);
+            underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
             task2State.phase = 'APPROACH';
             task2State.t = 0.0;
+            task2State.disperseTargets = null;
+            task2State.fifthTouchedOnce = false;
 
+            const o = TASK2_SCALE;
+            const sideWaitZ = 24 * o;
             const offsets = [
-                new THREE.Vector3(18, 8, 0),
-                new THREE.Vector3(-18, 8, 0),
-                new THREE.Vector3(0, 8, 18),
-                new THREE.Vector3(0, 8, -18),
-                new THREE.Vector3(0, -26, 0)
+                new THREE.Vector3(18 * o, 8 * o, 0),
+                new THREE.Vector3(-18 * o, 8 * o, 0),
+                new THREE.Vector3(0, 8 * o, 18 * o),
+                new THREE.Vector3(0, 8 * o, -18 * o),
+                new THREE.Vector3(0, 0, -sideWaitZ)
             ];
             for (let i = 0; i < task2Vehicles.length; i++) {
                 const u = task2Vehicles[i];
                 u.position.copy(c.clone().add(offsets[i]));
                 u.position.y = Math.max(getTerrainHeight(u.position.x, u.position.z) + 10, u.position.y);
+                if (i === 4) u.position.y = Math.max(u.position.y, c.y + 2);
                 u.userData.motion.vel.set(0,0,0);
                 u.rotation.set(0, 0, 0);
                 setSpray(u, false, 0);
@@ -1194,269 +1304,504 @@
 
         function updateTask2(dt, time) {
             task2State.t += dt;
+            const cx = underwaterTarget.center.x, cz = underwaterTarget.center.z;
+            const surfaceY = WATER_SURFACE_Y - 5.0;
+            const waveAtBarrel = getSurfaceWave(cx, cz, time);
+            const waveInfluence = task2State.phase === 'APPROACH' ? 0 : Math.max(0, Math.min(1, (task2State.barrelY - (surfaceY - 70)) / 70));
+
+            const sideDist = 1.55 * TASK2_SCALE;
+            const barrelHalfHeight = 1.1 * TASK2_SCALE;
+            const bottomDist = barrelHalfHeight + 0.02;
             const sideOffsets = [
-                new THREE.Vector3(5.2, 0, 0),
-                new THREE.Vector3(-5.2, 0, 0),
-                new THREE.Vector3(0, 0, 5.2),
-                new THREE.Vector3(0, 0, -5.2)
+                new THREE.Vector3(sideDist, 0, 0),
+                new THREE.Vector3(-sideDist, 0, 0),
+                new THREE.Vector3(0, 0, sideDist),
+                new THREE.Vector3(0, 0, -sideDist)
             ];
-            const bottomOffset = new THREE.Vector3(0, -5.2, 0);
+            const bottomOffset = new THREE.Vector3(0, -bottomDist, 0);
 
             if (task2State.phase === 'APPROACH') {
-                let allClose = true;
+                underwaterTarget.barrel.position.set(cx, task2State.barrelY + waveInfluence * waveAtBarrel, cz);
+                underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
+
+                let allTouching = true;
                 for (let i = 0; i < 4; i++) {
                     const u = task2Vehicles[i];
-                    const go = underwaterTarget.center.clone().add(sideOffsets[i]);
-                    go.y = underwaterTarget.center.y + 1.0;
-                    const d = steerToYawOnly(u, go, dt, 30).dist;
-                    allClose = allClose && d < 1.8;
+                    const targetPos = underwaterTarget.barrel.position.clone().add(sideOffsets[i]);
+                    const d = steerToYawOnly(u, targetPos, dt, 38).dist;
+                    allTouching = allTouching && (d < 6.0);
                     updateUUVProps(u, dt, time);
                 }
-                // 5th stays below
                 {
                     const u = task2Vehicles[4];
-                    const go = underwaterTarget.center.clone().add(new THREE.Vector3(0, -22, 0));
-                    go.y = Math.max(getTerrainHeight(go.x, go.z) + 8, go.y);
-                    steerToYawOnly(u, go, dt, 28);
+                    const waitPos = underwaterTarget.barrel.position.clone().add(new THREE.Vector3(0, 0, -8 * TASK2_SCALE));
+                    waitPos.y = underwaterTarget.barrel.position.y;
+                    steerToYawOnly(u, waitPos, dt, 30);
                     updateUUVProps(u, dt, time);
                 }
+
                 hud.progress.textContent = 'Approach (4 sides)';
-                hud.note.textContent = '4 UUVs attach front/back/left/right.';
-                if (allClose && task2State.t > 1.0) { task2State.phase = 'LIFT'; task2State.t = 0.0; }
-            } else if (task2State.phase === 'LIFT') {
-                // Lift away from seabed
-                const th = getTerrainHeight(underwaterTarget.barrel.position.x, underwaterTarget.barrel.position.z);
-                const liftY = Math.max(th + 26.0, underwaterTarget.center.y + 26.0);
-                underwaterTarget.barrel.position.y = THREE.MathUtils.lerp(underwaterTarget.barrel.position.y, liftY, 0.06);
+                hud.note.textContent = '4 UUVs attach to barrel. When all 4 touch, barrel rises to surface.';
+                if ((allTouching && task2State.t > 0.3) || task2State.t > 3.0) {
+                    task2State.phase = 'LIFT_WAIT';
+                    task2State.t = 0.0;
+                }
+            } else if (task2State.phase === 'LIFT_WAIT') {
+                const liftStartY = underwaterTarget.center.y;
+                const firstRiseDist = 28;
+                const firstRiseStopY = liftStartY + firstRiseDist;
+                const firstRiseSpeed = 8.0;
+                if (task2State.barrelY < firstRiseStopY) {
+                    task2State.barrelY += firstRiseSpeed * dt;
+                    if (task2State.barrelY > firstRiseStopY) task2State.barrelY = firstRiseStopY;
+                }
+                underwaterTarget.barrel.position.set(cx, task2State.barrelY + waveInfluence * waveAtBarrel, cz);
                 underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
+
                 for (let i = 0; i < 4; i++) {
                     const u = task2Vehicles[i];
-                    const go = underwaterTarget.barrel.position.clone().add(sideOffsets[i]);
-                    u.position.lerp(go, 0.20);
+                    u.position.copy(underwaterTarget.barrel.position.clone().add(sideOffsets[i]));
                     const to = underwaterTarget.barrel.position.clone().sub(u.position).normalize();
                     u.rotation.set(0, Math.atan2(to.x, to.z), 0);
                     updateUUVProps(u, dt, time);
                 }
-                {
-                    const u = task2Vehicles[4];
-                    const go = underwaterTarget.barrel.position.clone().add(new THREE.Vector3(0, -20, 0));
-                    steerToYawOnly(u, go, dt, 30);
-                    updateUUVProps(u, dt, time);
-                }
-                hud.progress.textContent = 'Lift (off terrain)';
-                hud.note.textContent = 'Target is lifted away from seabed relief.';
-                if (task2State.t > 2.0) { task2State.phase = 'HOLD'; task2State.t = 0.0; }
-            } else if (task2State.phase === 'HOLD') {
-                const th = getTerrainHeight(underwaterTarget.barrel.position.x, underwaterTarget.barrel.position.z);
-                if (underwaterTarget.barrel.position.y < th + 22) underwaterTarget.barrel.position.y = th + 22;
-                underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
-                for (let i = 0; i < 4; i++) {
-                    const u = task2Vehicles[i];
-                    const go = underwaterTarget.barrel.position.clone().add(sideOffsets[i]);
-                    u.position.lerp(go, 0.22);
-                    const to = underwaterTarget.barrel.position.clone().sub(u.position).normalize();
-                    u.rotation.set(0, Math.atan2(to.x, to.z), 0);
-                    updateUUVProps(u, dt, time);
-                }
-                {
-                    const u = task2Vehicles[4];
-                    const go = underwaterTarget.barrel.position.clone().add(new THREE.Vector3(0, -10, 0));
-                    steerToYawOnly(u, go, dt, 32);
-                    updateUUVProps(u, dt, time);
-                }
-                hud.progress.textContent = 'Hold';
-                hud.note.textContent = 'Wait off-terrain, then bottom UUV attaches.';
-                if (task2State.t > 1.4) { task2State.phase = 'BOTTOM_ATTACH'; task2State.t = 0.0; }
-            } else if (task2State.phase === 'BOTTOM_ATTACH') {
-                for (let i = 0; i < 4; i++) {
-                    const u = task2Vehicles[i];
-                    const go = underwaterTarget.barrel.position.clone().add(sideOffsets[i]);
-                    u.position.lerp(go, 0.24);
-                    updateUUVProps(u, dt, time);
-                }
-                const u = task2Vehicles[4];
+                const u5 = task2Vehicles[4];
                 const go = underwaterTarget.barrel.position.clone().add(bottomOffset);
-                const d = steerToYawOnly(u, go, dt, 34).dist;
-                updateUUVProps(u, dt, time);
-                hud.progress.textContent = 'Bottom attach';
-                hud.note.textContent = '5th UUV attaches from below.';
-                if (d < 2.0 && task2State.t > 0.7) { task2State.phase = 'ASCEND'; task2State.t = 0.0; }
-            } else if (task2State.phase === 'ASCEND') {
-                const targetY = WATER_SURFACE_Y - 5.0;
-                underwaterTarget.barrel.position.y = THREE.MathUtils.lerp(underwaterTarget.barrel.position.y, targetY, 0.03);
+                const distToBottom = u5.position.distanceTo(go);
+                steerToYawOnly(u5, go, dt, 36);
+                updateUUVProps(u5, dt, time);
+
+                hud.progress.textContent = 'Lift (wait for 5th)';
+                hud.note.textContent = '4 UUVs lift barrel and stop. 5th moves to bottom; all rise together after contact.';
+                const fifthTouchDist = 3.0;
+                if (distToBottom < fifthTouchDist) {
+                    task2State.fifthTouchedOnce = true;
+                    u5.position.copy(go);
+                    task2State.phase = 'LIFT_ASCEND';
+                    task2State.t = 0.0;
+                }
+            } else if (task2State.phase === 'LIFT_ASCEND') {
+                const liftStartY = underwaterTarget.center.y;
+                const totalRise = surfaceY - liftStartY;
+                const progress = Math.max(0, (task2State.barrelY - liftStartY) / (totalRise || 1));
+                const riseSpeed = 3.5 + progress * 38.0;
+                task2State.barrelY += riseSpeed * dt;
+                if (task2State.barrelY > surfaceY) task2State.barrelY = surfaceY;
+                underwaterTarget.barrel.position.set(cx, task2State.barrelY + waveInfluence * waveAtBarrel, cz);
                 underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
+
                 for (let i = 0; i < 4; i++) {
-                    const u2 = task2Vehicles[i];
-                    const go2 = underwaterTarget.barrel.position.clone().add(sideOffsets[i]);
-                    u2.position.lerp(go2, 0.22);
-                    const to2 = underwaterTarget.barrel.position.clone().sub(u2.position).normalize();
-                    u2.rotation.set(0, Math.atan2(to2.x, to2.z), 0);
-                    updateUUVProps(u2, dt, time);
+                    const u = task2Vehicles[i];
+                    u.position.copy(underwaterTarget.barrel.position.clone().add(sideOffsets[i]));
+                    const to = underwaterTarget.barrel.position.clone().sub(u.position).normalize();
+                    u.rotation.set(0, Math.atan2(to.x, to.z), 0);
+                    updateUUVProps(u, dt, time);
                 }
                 {
-                    const u3 = task2Vehicles[4];
-                    const go3 = underwaterTarget.barrel.position.clone().add(bottomOffset);
-                    u3.position.lerp(go3, 0.22);
-                    const to3 = underwaterTarget.barrel.position.clone().sub(u3.position).normalize();
-                    u3.rotation.set(0, Math.atan2(to3.x, to3.z), 0);
-                    updateUUVProps(u3, dt, time);
+                    const u = task2Vehicles[4];
+                    const go = underwaterTarget.barrel.position.clone().add(bottomOffset);
+                    u.position.copy(go);
+                    const to = underwaterTarget.barrel.position.clone().sub(u.position).normalize();
+                    u.rotation.set(0, Math.atan2(to.x, to.z), 0);
+                    updateUUVProps(u, dt, time);
                 }
-                hud.progress.textContent = 'Ascend to surface';
-                hud.note.textContent = 'Carried target reaches the surface.';
-                if (Math.abs(underwaterTarget.barrel.position.y - targetY) < 1.2 && task2State.t > 2.0) {
+
+                hud.progress.textContent = 'Rising to surface';
+                hud.note.textContent = 'Barrel follows; 4 UUVs carry, 5th pushes from below.';
+                if (task2State.barrelY >= surfaceY - 3.0) {
+                    task2State.phase = 'DISPERSING';
+                    task2State.barrelY = surfaceY;
+                    task2State.t = 0.0;
+                    task2State.disperseTargets = [];
+                    for (let i = 0; i < 5; i++) {
+                        const angle = Math.random() * Math.PI * 2;
+                        const r = 28 + Math.random() * 18;
+                        const ty = surfaceY + (Math.random() - 0.5) * 4;
+                        task2State.disperseTargets.push(new THREE.Vector3(cx + Math.cos(angle) * r, ty, cz + Math.sin(angle) * r));
+                    }
+                }
+            } else if (task2State.phase === 'DISPERSING') {
+                underwaterTarget.barrel.position.set(cx, task2State.barrelY + waveInfluence * waveAtBarrel, cz);
+                underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
+
+                const disperseLerp = 0.038;
+                let allReached = true;
+                for (let i = 0; i < 5; i++) {
+                    const u = task2Vehicles[i];
+                    const tgt = task2State.disperseTargets[i];
+                    const desired = tgt.clone();
+                    desired.y = surfaceY + getSurfaceWave(desired.x, desired.z, time);
+                    u.position.lerp(desired, disperseLerp);
+                    const to = desired.clone().sub(u.position).normalize();
+                    if (to.lengthSq() > 0.01) u.rotation.set(0, Math.atan2(to.x, to.z), 0);
+                    if (Math.abs(u.position.x - tgt.x) > 2 || Math.abs(u.position.z - tgt.z) > 2) allReached = false;
+                    updateUUVProps(u, dt, time);
+                }
+                hud.progress.textContent = 'Dispersing';
+                hud.note.textContent = 'Devices slowly leave and disperse around.';
+                if (allReached && task2State.t > 2.0) {
                     task2State.phase = 'DONE';
                     task2State.t = 0.0;
                 }
             } else {
                 hud.progress.textContent = 'Done';
                 hud.note.textContent = 'Task completed.';
-                underwaterTarget.barrel.position.y = WATER_SURFACE_Y - 5.0;
+                task2State.barrelY = surfaceY;
+                underwaterTarget.barrel.position.set(cx, task2State.barrelY + waveInfluence * waveAtBarrel, cz);
                 underwaterTarget.glow.position.copy(underwaterTarget.barrel.position);
+                for (let i = 0; i < 5; i++) {
+                    const u = task2Vehicles[i];
+                    u.position.y = surfaceY + getSurfaceWave(u.position.x, u.position.z, time);
+                    updateUUVProps(u, dt, time);
+                }
             }
+
+            underwaterTarget.label.position.copy(underwaterTarget.barrel.position);
+            underwaterTarget.label.position.y += 4;
+            for (let i = 0; i < task2Vehicles.length; i++) {
+                const u = task2Vehicles[i];
+                if (u.userData.label) {
+                    u.userData.label.position.copy(u.position);
+                    u.userData.label.position.y += 3.6;
+                }
+            }
+            const phaseLabels = { APPROACH: 'Approach (4 sides)', LIFT: 'Rising to surface', DISPERSING: 'Dispersing', DONE: 'Done' };
+            const phaseLabel = phaseLabels[task2State.phase] || task2State.phase;
+            const phaseCls = task2State.phase === 'DONE' ? 'done' : 'cleaning';
+            const p = underwaterTarget.barrel.position;
+            hud.sources.innerHTML = '<div>Pollutant: (' + Math.round(p.x) + ', ' + Math.round(p.y) + ', ' + Math.round(p.z) + ')</div><div class="' + phaseCls + '">Phase: ' + phaseLabel + '</div>';
         }
 
         // =========================
-        // Task 3: Fish protection
+        // Task 3: Fish protection (fish geometry & material same as index.html)
         // =========================
-        const fish = [];
+        function createFishGeometry() {
+            const g = new THREE.BufferGeometry();
+            const v = [
+                0, 0, 0.62,    0, 0, -0.32,   0, 0.13, 0.12,  0, -0.13, 0.12,
+                -0.10, 0, 0.10,  0.10, 0, 0.10,
+                -0.18, 0, -0.62,  0.18, 0, -0.62,  0, 0.14, -0.54,  0, -0.14, -0.54,
+                0, 0.24, -0.02
+            ];
+            const idx = [
+                0, 2, 5,  0, 5, 3,  0, 3, 4,  0, 4, 2,
+                1, 5, 2,  1, 3, 5,  1, 4, 3,  1, 2, 4,
+                1, 6, 8,  1, 8, 7,  1, 7, 9,  1, 9, 6,
+                2, 10, 5,  2, 4, 10
+            ];
+            g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+            g.setIndex(idx);
+            g.computeVertexNormals();
+            g.computeBoundingSphere();
+            return g;
+        }
         const FISH_COUNT = 110;
-        const fishGeo = new THREE.ConeGeometry(0.25, 0.9, 7);
-        fishGeo.rotateX(Math.PI / 2);
-        const fishMat = new THREE.MeshStandardMaterial({ color: 0x7ad0ff, roughness: 0.55, metalness: 0.08 });
-        const fishMesh = new THREE.InstancedMesh(fishGeo, fishMat, FISH_COUNT);
+        const fishBodyGeo = createFishGeometry();
+        const fishMat = new THREE.MeshStandardMaterial({
+            color: 0xffc35a,
+            roughness: 0.4,
+            metalness: 0.18,
+            emissive: 0x8a4a10,
+            emissiveIntensity: 0.22
+        });
+        const fishMesh = new THREE.InstancedMesh(fishBodyGeo, fishMat, FISH_COUNT);
         fishMesh.castShadow = false;
         fishMesh.receiveShadow = false;
+        fishMesh.count = FISH_COUNT;
         task3Group.add(fishMesh);
+        const TASK3_SCALE = 1.9;
+        const FISH_DISPLAY_SCALE = 2.2;
+        fishMesh.scale.set(1, 1, 1);
 
-        const fishSpawnCenter = new THREE.Vector3(-720, 0, 720);
+        function lerpAngle(a, b, t) {
+            const twoPi = Math.PI * 2;
+            let d = (b - a) % twoPi;
+            if (d > Math.PI) d -= twoPi;
+            if (d < -Math.PI) d += twoPi;
+            return a + d * t;
+        }
+        const task3SchoolLabel = makeTextSprite('Fish School', 48);
+        task3Group.add(task3SchoolLabel);
+        const task3TargetLabel = makeTextSprite('Target', 48);
+        task3Group.add(task3TargetLabel);
+
+        // Shore = high X, high Z (coast corner); deep = low X, low Z (deep corner)
+        const fishSpawnCenter = new THREE.Vector3(720, 0, 720);
         fishSpawnCenter.y = Math.min(WATER_SURFACE_Y - 18, Math.max(getTerrainHeight(fishSpawnCenter.x, fishSpawnCenter.z) + 26, 100));
-        const deepSeaTarget = new THREE.Vector3(-260, 70, 180);
+        const deepSeaTarget = new THREE.Vector3(-720, 70, -720);
         deepSeaTarget.y = Math.max(getTerrainHeight(deepSeaTarget.x, deepSeaTarget.z) + 16, 62);
 
+        const TASK3_SCHOOL_SPEED = 5.8;
+        const task3School = { x: fishSpawnCenter.x, y: fishSpawnCenter.y, z: fishSpawnCenter.z, heading: Math.atan2(deepSeaTarget.x - fishSpawnCenter.x, deepSeaTarget.z - fishSpawnCenter.z), speed: TASK3_SCHOOL_SPEED, phase: Math.random() * Math.PI * 2 };
+        const fishData = [];
         for (let i = 0; i < FISH_COUNT; i++) {
-            const ang = Math.random() * Math.PI * 2;
-            const r = Math.random() * 30;
-            const pos = new THREE.Vector3(
-                fishSpawnCenter.x + Math.cos(ang) * r,
-                fishSpawnCenter.y + (Math.random() - 0.5) * 10,
-                fishSpawnCenter.z + Math.sin(ang) * r
-            );
-            const vel = new THREE.Vector3((Math.random() - 0.5), (Math.random() - 0.5) * 0.12, (Math.random() - 0.5)).normalize().multiplyScalar(7 + Math.random() * 5);
-            fish.push({ pos, vel });
+            const ox = (Math.random() - 0.5) * (8 + Math.random() * 10);
+            const oz = (Math.random() - 0.5) * (10 + Math.random() * 12);
+            const oy = (Math.random() - 0.5) * 10;
+            const ch = Math.cos(task3School.heading), sh = Math.sin(task3School.heading);
+            fishData.push({
+                school: 0,
+                x: task3School.x + ox * ch + oz * sh,
+                y: task3School.y + oy,
+                z: task3School.z + oz * ch - ox * sh,
+                rotY: task3School.heading + (Math.random() - 0.5) * 0.35,
+                speed: task3School.speed * (0.9 + Math.random() * 0.25),
+                phase: Math.random() * Math.PI * 2,
+                scale: 0.95 + Math.random() * 0.9,
+                ox, oy, oz
+            });
         }
 
         const task3Vehicles = [];
         const TASK3_UUVS = 8;
+        const sonarRingGeo = new THREE.RingGeometry(1.2, 3, 56);
+        const sonarRingMat = new THREE.MeshBasicMaterial({
+            color: 0x88ddff,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
         for (let i = 0; i < TASK3_UUVS; i++) {
             const u = createIndexUUV();
+            u.scale.set(0.38 * TASK3_SCALE, 0.38 * TASK3_SCALE, 0.38 * TASK3_SCALE);
             u.userData.motion = { vel: new THREE.Vector3(), idx: i };
+            u.userData.smoothTgt = null;
+            u.userData.idle = false;
+            u.userData.sonarPulseNextT = 0;
+            const sonarRing = new THREE.Mesh(sonarRingGeo, sonarRingMat.clone());
+            sonarRing.visible = false;
+            sonarRing.scale.setScalar(0.1);
+            task3Group.add(sonarRing);
+            u.userData.sonarRing = sonarRing;
+            const lbl = makeTextSprite('U' + (i + 1), 48);
+            u.userData.label = lbl;
             task3Group.add(u);
+            task3Group.add(lbl);
             task3Vehicles.push(u);
         }
 
         const task3State = { t: 0.0, done: false };
+        const task3FishDummy = new THREE.Object3D();
+        const task3SmoothedCenter = new THREE.Vector3();
+        const task3FormationCenter = new THREE.Vector3();
 
         function resetTask3() {
-            for (let i = 0; i < fish.length; i++) {
-                const ang = Math.random() * Math.PI * 2;
-                const r = Math.random() * 30;
-                fish[i].pos.set(
-                    fishSpawnCenter.x + Math.cos(ang) * r,
-                    fishSpawnCenter.y + (Math.random() - 0.5) * 10,
-                    fishSpawnCenter.z + Math.sin(ang) * r
-                );
-                fish[i].vel.set((Math.random() - 0.5), (Math.random() - 0.5) * 0.12, (Math.random() - 0.5)).normalize().multiplyScalar(7 + Math.random() * 5);
+            task3School.x = fishSpawnCenter.x;
+            task3School.y = fishSpawnCenter.y;
+            task3School.z = fishSpawnCenter.z;
+            task3School.heading = Math.atan2(deepSeaTarget.x - task3School.x, deepSeaTarget.z - task3School.z);
+            task3School.speed = TASK3_SCHOOL_SPEED;
+            task3School.phase = Math.random() * Math.PI * 2;
+            const ch = Math.cos(task3School.heading), sh = Math.sin(task3School.heading);
+            for (let i = 0; i < fishData.length; i++) {
+                const f = fishData[i];
+                f.x = task3School.x + f.ox * ch + f.oz * sh;
+                f.z = task3School.z + f.oz * ch - f.ox * sh;
+                f.y = task3School.y + f.oy;
+                f.rotY = task3School.heading + (Math.random() - 0.5) * 0.35;
             }
             for (let i = 0; i < task3Vehicles.length; i++) {
                 const u = task3Vehicles[i];
                 u.position.set(fishSpawnCenter.x + 40 + i * 6, fishSpawnCenter.y + (i % 2) * 3, fishSpawnCenter.z + 55 - i * 5);
                 u.rotation.set(0, Math.PI, 0);
                 u.userData.motion.vel.set(0,0,0);
+                u.userData.smoothTgt = null;
+                u.userData.wanderTgt = undefined;
+                u.userData.wanderNextT = undefined;
+                u.userData.idle = false;
+                if (u.userData.sonarRing) u.userData.sonarRing.visible = false;
                 setSpray(u, false, 0);
             }
             task3State.t = 0.0;
             task3State.done = false;
+            task3SmoothedCenter.set(0, 0, 0);
+            task3FormationCenter.set(0, 0, 0);
         }
 
         function updateFishSchool(dt, time) {
-            const tmp = new THREE.Vector3();
-            const tmp2 = new THREE.Vector3();
-            for (let i = 0; i < fish.length; i++) {
-                const f = fish[i];
-                tmp.copy(deepSeaTarget).sub(f.pos);
-                const dist = Math.max(1e-6, tmp.length());
-                tmp.multiplyScalar(1 / dist);
-                const goal = tmp.multiplyScalar(2.6);
+            const surfaceYAt = (x, z) => WATER_SURFACE_Y + getSurfaceWave(x, z, time);
+            const sch = task3School;
 
-                const n = simplex.noise3D(f.pos.x * 0.003, f.pos.z * 0.003, time * 0.25);
-                const swirl = new THREE.Vector3(Math.cos(n * Math.PI * 2), 0.0, Math.sin(n * Math.PI * 2)).multiplyScalar(0.9);
+            sch.heading += Math.sin(time * 0.25 + sch.phase) * 0.008;
+            const toDeepX = deepSeaTarget.x - sch.x;
+            const toDeepZ = deepSeaTarget.z - sch.z;
+            const toDeepLen = Math.sqrt(toDeepX * toDeepX + toDeepZ * toDeepZ) || 1;
+            const desiredHeading = Math.atan2(toDeepX, toDeepZ);
+            sch.heading = lerpAngle(sch.heading, desiredHeading, 0.12 * dt);
 
-                const repel = new THREE.Vector3();
-                for (let vi = 0; vi < task3Vehicles.length; vi++) {
-                    const u = task3Vehicles[vi];
-                    const d = f.pos.distanceTo(u.position);
-                    if (d < 60) {
-                        tmp2.copy(f.pos).sub(u.position);
-                        tmp2.y *= 0.25;
-                        const strength = (1 - d / 60) ** 2 * 10.0;
-                        tmp2.normalize().multiplyScalar(strength);
-                        repel.add(tmp2);
-                    }
+            let repelX = 0, repelZ = 0;
+            for (let vi = 0; vi < task3Vehicles.length; vi++) {
+                const u = task3Vehicles[vi];
+                const dx = sch.x - u.position.x, dz = sch.z - u.position.z;
+                const d = Math.sqrt(dx * dx + dz * dz) || 1;
+                if (d < 80) {
+                    const strength = (1 - d / 80) * 0.8;
+                    repelX += (dx / d) * strength;
+                    repelZ += (dz / d) * strength;
                 }
-
-                f.vel.addScaledVector(goal, dt);
-                f.vel.addScaledVector(swirl, dt);
-                f.vel.addScaledVector(repel, dt);
-
-                const sp = f.vel.length();
-                const maxSp = 18.0;
-                if (sp > maxSp) f.vel.multiplyScalar(maxSp / sp);
-
-                f.pos.addScaledVector(f.vel, dt);
-                const surf = WATER_SURFACE_Y - 10.0;
-                if (f.pos.y > surf) f.pos.y = surf;
-                const th = getTerrainHeight(f.pos.x, f.pos.z) + 6.0;
-                if (f.pos.y < th) f.pos.y = th;
             }
+            const driftToSafe = 6.2;
+            const toDeepNormX = toDeepX / toDeepLen;
+            const toDeepNormZ = toDeepZ / toDeepLen;
+            sch.x += (Math.sin(sch.heading) * sch.speed + repelX) * dt + toDeepNormX * driftToSafe * dt;
+            sch.z += (Math.cos(sch.heading) * sch.speed + repelZ) * dt + toDeepNormZ * driftToSafe * dt;
+            sch.y += Math.sin(time * 0.55 + sch.phase) * 0.06 * dt;
 
-            for (let i = 0; i < fish.length; i++) {
-                const f = fish[i];
-                dummy.position.copy(f.pos);
-                const yaw = Math.atan2(f.vel.x, f.vel.z);
-                const pitch = THREE.MathUtils.clamp(-f.vel.y * 0.04, -0.35, 0.35);
-                dummy.rotation.set(pitch, yaw, 0);
-                const s = 0.75 + 0.22 * Math.sin(time * 1.2 + i);
-                dummy.scale.set(s, s, s);
-                dummy.updateMatrix();
-                fishMesh.setMatrixAt(i, dummy.matrix);
+            const th = getTerrainHeight(sch.x, sch.z);
+            if (sch.y < th + 6) sch.y = th + 6;
+            const surf = surfaceYAt(sch.x, sch.z);
+            if (sch.y > surf - 12) sch.y = surf - 12;
+
+            for (let i = 0; i < fishData.length; i++) {
+                const f = fishData[i];
+                const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
+                const tx = sch.x + f.ox * ch + f.oz * sh;
+                const tz = sch.z + f.oz * ch - f.ox * sh;
+                const ty = sch.y + f.oy;
+
+                const toAng = Math.atan2(tx - f.x, tz - f.z);
+                const steer = lerpAngle(f.rotY, toAng, 0.85 * dt);
+                f.rotY = steer + Math.sin(time * 1.2 + f.phase) * 0.015;
+
+                f.x += Math.sin(f.rotY) * f.speed * dt;
+                f.z += Math.cos(f.rotY) * f.speed * dt;
+                f.y += (ty - f.y) * (0.8 * dt);
+
+                const fth = getTerrainHeight(f.x, f.z);
+                if (f.y < fth + 3) f.y = fth + 3;
+                const fsurf = surfaceYAt(f.x, f.z);
+                if (f.y > fsurf - 6) f.y = fsurf - 6;
+
+                task3FishDummy.position.set(f.x, f.y, f.z);
+                task3FishDummy.rotation.set(0, f.rotY, 0);
+                task3FishDummy.scale.set(
+                    (f.scale * 1.05) * FISH_DISPLAY_SCALE,
+                    (f.scale * 0.72) * FISH_DISPLAY_SCALE,
+                    (f.scale * 1.25) * FISH_DISPLAY_SCALE
+                );
+                task3FishDummy.updateMatrix();
+                fishMesh.setMatrixAt(i, task3FishDummy.matrix);
             }
+            fishMesh.count = fishData.length;
             fishMesh.instanceMatrix.needsUpdate = true;
         }
 
         function updateTask3(dt, time) {
             task3State.t += dt;
-            // school center
-            const schoolCenter = fish.reduce((acc, f) => acc.add(f.pos), new THREE.Vector3()).multiplyScalar(1 / fish.length);
-            const forward = deepSeaTarget.clone().sub(schoolCenter);
-            const forwardLen = Math.max(1e-6, forward.length());
-            forward.multiplyScalar(1 / forwardLen);
-            const behind = forward.clone().multiplyScalar(-55);
-            const lateral = new THREE.Vector3(-forward.z, 0, forward.x);
-            const vertical = new THREE.Vector3(0, -1, 0);
+            updateFishSchool(dt, time);
 
+            let sx = 0, sy = 0, sz = 0;
+            for (let i = 0; i < fishData.length; i++) {
+                const f = fishData[i];
+                sx += f.x; sy += f.y; sz += f.z;
+            }
+            const n = fishData.length || 1;
+            const schoolCenter = new THREE.Vector3(sx / n, sy / n, sz / n);
+            if (task3SmoothedCenter.x === 0 && task3SmoothedCenter.y === 0 && task3SmoothedCenter.z === 0) {
+                task3SmoothedCenter.copy(schoolCenter);
+            } else {
+                task3SmoothedCenter.lerp(schoolCenter, 0.06);
+            }
+            const forwardToDeep = deepSeaTarget.clone().sub(task3SmoothedCenter);
+            const forwardLen = Math.max(1e-6, forwardToDeep.length());
+            forwardToDeep.multiplyScalar(1 / forwardLen);
+            const lateral = new THREE.Vector3(-forwardToDeep.z, 0, forwardToDeep.x);
+            const lateralLen = Math.max(1e-6, lateral.length());
+            lateral.multiplyScalar(1 / lateralLen);
+
+            const wrapDist = 24;
+            const back = forwardToDeep.clone().multiplyScalar(-1);
+            const up = new THREE.Vector3(0, 1, 0);
+            const backLat = back.clone().add(lateral).normalize();
+            const backLatR = back.clone().sub(lateral).normalize();
+            const backUp = back.clone().add(up).normalize();
+            const backDown = back.clone().sub(up).normalize();
+            const backLatUp = back.clone().add(lateral.clone().multiplyScalar(0.6)).add(up.clone().multiplyScalar(0.5)).normalize();
+            const cellDirs = [back, backLat, backLatR, lateral, lateral.clone().negate(), backUp, backDown, backLatUp];
+
+            const cellRadius = 3.5;
+            const uuvSpeed = 26;
+            const maxYawRate = 1.0;
+            const wanderTgtLerp = 0.06;
+            const wanderRefreshInterval = 2.0;
+            const moveChance = 0.55;
             for (let i = 0; i < task3Vehicles.length; i++) {
                 const u = task3Vehicles[i];
-                const lane = (i - (task3Vehicles.length - 1) / 2) / Math.max(1, (task3Vehicles.length - 1) / 2);
-                const tgt = schoolCenter.clone()
-                    .add(behind)
-                    .add(lateral.clone().multiplyScalar(lane * 34))
-                    .add(vertical.clone().multiplyScalar((i % 2) * 6));
+                const dir = cellDirs[i];
+                const cellCenter = task3SmoothedCenter.clone().add(dir.clone().multiplyScalar(wrapDist));
+
+                if (u.userData.wanderNextT === undefined) u.userData.wanderNextT = 0;
+                if (task3State.t >= u.userData.wanderNextT) {
+                    if (Math.random() < moveChance) {
+                        u.userData.idle = false;
+                        const r = Math.random() * cellRadius;
+                        const theta = Math.random() * Math.PI * 2;
+                        const phi = Math.acos(2 * Math.random() - 1) * 0.5;
+                        const ax = Math.sin(phi) * Math.cos(theta);
+                        const ay = Math.cos(phi);
+                        const az = Math.sin(phi) * Math.sin(theta);
+                        const offset = lateral.clone().multiplyScalar(ax * r).add(up.clone().multiplyScalar(ay * r)).add(forwardToDeep.clone().multiplyScalar(az * r));
+                        const tgt = cellCenter.clone().add(offset);
+                        tgt.y = THREE.MathUtils.clamp(tgt.y, getTerrainHeight(tgt.x, tgt.z) + 18, WATER_SURFACE_Y - 14);
+                        u.userData.wanderTgt = tgt;
+                    } else {
+                        u.userData.idle = true;
+                        u.userData.wanderTgt = u.position.clone();
+                    }
+                    u.userData.wanderNextT = task3State.t + wanderRefreshInterval + Math.random() * 1.5;
+                }
+                const tgt = u.userData.wanderTgt.clone();
                 tgt.y = THREE.MathUtils.clamp(tgt.y, getTerrainHeight(tgt.x, tgt.z) + 18, WATER_SURFACE_Y - 14);
-                steerToYawOnly(u, tgt, dt, 26);
+                if (!u.userData.smoothTgt) {
+                    u.userData.smoothTgt = tgt.clone();
+                } else {
+                    u.userData.smoothTgt.lerp(tgt, wanderTgtLerp);
+                }
+                steerToYawOnly(u, u.userData.smoothTgt, dt, uuvSpeed, maxYawRate);
                 updateUUVProps(u, dt, time);
             }
 
-            updateFishSchool(dt, time);
+            const sonarPulseInterval = 1.15;
+            const sonarPulseGrowth = 1.07;
+            const sonarPulseFade = 0.022;
+            const sonarStartScale = 0.18;
+            const sonarStartOpacity = 0.78;
+            for (let i = 0; i < task3Vehicles.length; i++) {
+                const u = task3Vehicles[i];
+                const ring = u.userData.sonarRing;
+                if (!ring) continue;
+                if (!u.userData.idle) {
+                    ring.visible = false;
+                    continue;
+                }
+                ring.position.copy(u.position);
+                ring.lookAt(schoolCenter);
+                if (task3State.t >= u.userData.sonarPulseNextT) {
+                    ring.scale.setScalar(sonarStartScale);
+                    ring.material.opacity = sonarStartOpacity;
+                    ring.visible = true;
+                    u.userData.sonarPulseNextT = task3State.t + sonarPulseInterval;
+                }
+                if (ring.visible && ring.material.opacity > 0.01) {
+                    ring.scale.multiplyScalar(sonarPulseGrowth);
+                    ring.material.opacity = Math.max(0, ring.material.opacity - sonarPulseFade);
+                    if (ring.material.opacity <= 0.01) ring.visible = false;
+                }
+            }
+
+            task3SchoolLabel.position.copy(schoolCenter);
+            task3SchoolLabel.position.y += 5;
+            task3TargetLabel.position.copy(deepSeaTarget);
+            task3TargetLabel.position.y += 5;
+            for (let i = 0; i < task3Vehicles.length; i++) {
+                const u = task3Vehicles[i];
+                if (u.userData.label) {
+                    u.userData.label.position.copy(u.position);
+                    u.userData.label.position.y += 3.6;
+                }
+            }
 
             const d = schoolCenter.distanceTo(deepSeaTarget);
             const deepEnough = schoolCenter.y < (deepSeaTarget.y + 10);
@@ -1465,6 +1810,10 @@
 
             hud.progress.textContent = task3State.done ? 'Done' : `d=${d.toFixed(1)}m`;
             hud.note.textContent = '8 UUVs herd fish toward deep sea (goal + repulsion).';
+            const sc = schoolCenter;
+            const statusCls = task3State.done ? 'done' : 'pending';
+            const statusText = task3State.done ? 'Done (reached deep sea)' : 'Herding to deep sea';
+            hud.sources.innerHTML = '<div>School center: (' + Math.round(sc.x) + ', ' + Math.round(sc.y) + ', ' + Math.round(sc.z) + ')</div><div>Target (deep): (' + Math.round(deepSeaTarget.x) + ', ' + Math.round(deepSeaTarget.y) + ', ' + Math.round(deepSeaTarget.z) + ')</div><div class="' + statusCls + '">' + statusText + '</div>';
         }
 
         // =========================
@@ -1472,12 +1821,17 @@
         // =========================
         const hud = {
             active: document.getElementById('hud-active'),
+            status: document.getElementById('hud-status'),
             uuvs: document.getElementById('hud-uuvs'),
             progress: document.getElementById('hud-progress'),
             time: document.getElementById('hud-time'),
             note: document.getElementById('hud-note'),
-            desc: document.getElementById('task-desc')
+            desc: document.getElementById('task-desc'),
+            sources: document.getElementById('hud-sources'),
+            sourcesTitle: document.getElementById('hud-sources-title')
         };
+
+        let taskElapsedTime = 0;
 
         const btnTask1 = document.getElementById('btn-task1');
         const btnTask2 = document.getElementById('btn-task2');
@@ -1531,29 +1885,35 @@
             setActiveButton(btnTask3, taskId === 'TASK3');
 
             lastFollowCenter = null;
+            taskElapsedTime = 0;
 
             if (taskId === 'TASK1') {
+                hud.sourcesTitle.textContent = ' (Task 1)';
                 hud.active.textContent = 'Task 1';
                 hud.uuvs.textContent = String(TASK1_UUVS);
-                hud.desc.textContent = 'Multiple UUVs each clean one surface pollution source: approach a yellow barrel, stay close for ~3–4s to neutralize diffusion, then move to the next source until all are cleaned.';
+                hud.desc.textContent = '4 UUVs. Each UUV cleans one surface pollution source: approach a yellow barrel, stay close to neutralize (visible purifier); barrel then changes color and diffusion stops. UUV moves to next source until all are done.';
                 resetTask1();
-                controls.target.set(0, WATER_SURFACE_Y - 12, 20);
-                camera.position.set(220, 200, 260);
             } else if (taskId === 'TASK2') {
+                hud.sourcesTitle.textContent = ' (Task 2)';
+                hud.sources.innerHTML = '—';
                 hud.active.textContent = 'Task 2';
                 hud.uuvs.textContent = String(TASK2_UUVS);
-                hud.desc.textContent = 'Four UUVs attach from front/back/left/right to lift a pollution barrel off the seabed; after detaching from terrain for a while, a fifth UUV attaches from below and the team carries it upward to the surface.';
+                hud.desc.textContent = '5 UUVs. Four attach front/back/left/right and lift the barrel off the seabed; hold off-terrain; then the 5th attaches from below and the team ascends to the surface to complete.';
                 resetTask2();
-                controls.target.copy(underwaterTarget.center.clone().add(new THREE.Vector3(0, 10, 0)));
-                camera.position.set(underwaterTarget.center.x + 220, underwaterTarget.center.y + 150, underwaterTarget.center.z + 270);
             } else {
+                hud.sourcesTitle.textContent = ' (Task 3)';
+                hud.sources.innerHTML = '—';
                 hud.active.textContent = 'Task 3';
                 hud.uuvs.textContent = String(TASK3_UUVS);
-                hud.desc.textContent = 'A fish school spawns near shore; eight UUVs coordinate behind and around the school to drive it toward a deep-sea region (fish follow a goal-to-depth model while avoiding nearby UUVs).';
+                hud.desc.textContent = '8 UUVs. Fish spawn near shore; UUVs herd the school toward the deep-sea target. Completion when the school reaches the deepest zone. UUV motion is rigid (no fish-like sway).';
                 resetTask3();
-                controls.target.copy(fishSpawnCenter.clone());
-                camera.position.set(fishSpawnCenter.x + 260, fishSpawnCenter.y + 170, fishSpawnCenter.z + 260);
             }
+            // Camera: follow new group from its center + offset (Task 3 closer)
+            followCenter = computeSwarmCenter();
+            lastFollowCenter = null;
+            controls.target.copy(followCenter);
+            const camOffset = taskId === 'TASK3' ? new THREE.Vector3(32, 17, 41) : taskId === 'TASK2' ? new THREE.Vector3(40, 21, 50) : new THREE.Vector3(48, 25, 58);
+            camera.position.copy(followCenter).add(camOffset);
             controls.update();
         }
 
@@ -1611,6 +1971,8 @@
             dirLight.intensity = baseDir * shimmer;
             groundMat.emissiveIntensity = (0.015 + 0.02 * (1 - depthNorm)) * (0.65 + 0.35 * Math.sin(time * 0.9));
 
+            taskElapsedTime += dt;
+
             // tasks update
             if (activeTask === 'TASK1') updateTask1(dt, time);
             else if (activeTask === 'TASK2') updateTask2(dt, time);
@@ -1620,7 +1982,14 @@
             followCenter = computeSwarmCenter();
             applyFollowCenter(followCenter);
 
-            hud.time.textContent = `t=${time.toFixed(1)}s`;
+            let taskDone = false;
+            if (activeTask === 'TASK1') taskDone = surfaceClusters.length > 0 && surfaceClusters.every(c => c.cleaned);
+            else if (activeTask === 'TASK2') taskDone = task2State.phase === 'DONE';
+            else taskDone = task3State.done;
+            hud.status.textContent = taskDone ? 'Done' : 'In Progress';
+            hud.status.className = 'ui-value ' + (taskDone ? 'status-done' : 'status-running');
+
+            hud.time.textContent = `t=${taskElapsedTime.toFixed(1)}s`;
             controls.update();
             renderer.render(scene, camera);
         }

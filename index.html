@@ -325,6 +325,10 @@
         .welcome-content strong {
             color: #333;
         }
+        .welcome-content .oneocean-highlight {
+            font-weight: bold;
+            color: #2563eb;
+        }
 
         .welcome-content .controls-info {
             background: rgba(255, 68, 0, 0.1);
@@ -381,15 +385,9 @@
         <div class="welcome-content">
             <h2>Welcome to OneOcean UUV Simulation Demo</h2>
             
-            <p>This is an <strong>interactive underwater simulation demo</strong> for ocean robotics scene prototyping.</p>
-            <p><strong>What you can see:</strong> continuous seabed terrain, deep trenches, dense seagrass/coral areas, pollutant targets, and dynamic current particles.</p>
-            <ul>
-                <li><strong>Vehicle:</strong> UUV/AUV body with rear ducted propellers and spotlights</li>
-                <li><strong>Environment:</strong> larger map with varied relief and localized terrain features</li>
-                <li><strong>Water:</strong> animated surface waves + depth-dependent lighting attenuation</li>
-                <li><strong>Tasks:</strong> measure distance to floating and underwater pollutant targets</li>
-            </ul>
-            <p>Controls remain aligned with the reference online demo.</p>
+            <p>This demo helps you quickly understand <span class="oneocean-highlight">OneOcean</span> work -- especially the dataset, scenes, and tasks we built for ocean(marine) robotics simulation. It supports data import and export so you can build an interactive 3D ocean environment with our dataset.</p>
+            <p><span class="oneocean-highlight">After entering, click the button in the top-right corner to view our task demos.</span></p>
+            <p>Try controlling the UUV (Unmanned Underwater Vehicle):</p>
 
             <div class="controls-info">
                 <strong>Quick Start:</strong>
@@ -558,31 +556,43 @@
             pollutionClusters: []  // [{ clusterId, centerX, centerZ, points: [{dx, dz}, ...] }, ...]
         };
 
-        // Storage Key
+        // Storage Key and expected counts (used for load merge and pollution init)
         const STORAGE_KEY = 'oneocean_uuv_env_v2';
+        const DATA_VERSION = 2;
+        const UNDERWATER_POLLUTION_COUNT = 6;
+        const POLLUTION_CLUSTER_COUNT = 2;
 
-        // Load Environment Data from localStorage only
+        // Load environment data from localStorage; merge partial data and use defaults for missing parts
         const savedData = localStorage.getItem(STORAGE_KEY);
         let isLoadedFromData = false;
 
         if (savedData) {
             try {
-                console.log("Found saved map data, loading...");
                 const parsed = JSON.parse(savedData);
-                // Validate essential fields
-                if (parsed.seed && parsed.mountainBuildings) {
-                    worldState = parsed;
+                if (parsed != null && typeof parsed === 'object') {
+                    if (typeof parsed.seed === 'number') {
+                        worldState.seed = parsed.seed;
+                        seedRandom(worldState.seed);
+                    }
+                    if (Array.isArray(parsed.mountainBuildings)) worldState.mountainBuildings = parsed.mountainBuildings;
+                    if (Array.isArray(parsed.cityBuildings)) worldState.cityBuildings = parsed.cityBuildings;
+                    if (Array.isArray(parsed.buildingColliders)) worldState.buildingColliders = parsed.buildingColliders;
+                    if (Array.isArray(parsed.cabinPositions)) worldState.cabinPositions = parsed.cabinPositions;
+                    if (Array.isArray(parsed.finalUsers) && parsed.finalUsers.length === UNDERWATER_POLLUTION_COUNT) worldState.finalUsers = parsed.finalUsers;
+                    if (Array.isArray(parsed.pollutionClusters) && parsed.pollutionClusters.length === POLLUTION_CLUSTER_COUNT) worldState.pollutionClusters = parsed.pollutionClusters;
+                    if (Array.isArray(parsed.terrainMap) && parsed.terrainMap.length > 0) worldState.terrainMap = parsed.terrainMap;
+                    if (parsed.deviceInitialPosition && typeof parsed.deviceInitialPosition.x === 'number') worldState.deviceInitialPosition = parsed.deviceInitialPosition;
+                    if (Array.isArray(parsed.fishSchools) && parsed.fishSchools.length > 0) worldState.fishSchools = parsed.fishSchools;
                     isLoadedFromData = true;
-                    seedRandom(worldState.seed);
-                    console.log("Loaded environment data from localStorage");
+                    console.log("Loaded environment data from localStorage (partial merge, missing parts use defaults)");
                 }
             } catch (e) {
                 console.error("Failed to load saved data", e);
             }
         }
-        
-        if (!isLoadedFromData) {
-            worldState.seed = Math.random() * 100000;
+
+        if (!isLoadedFromData || typeof worldState.seed !== 'number') {
+            worldState.seed = typeof worldState.seed === 'number' ? worldState.seed : Math.random() * 100000;
             seedRandom(worldState.seed);
         }
 
@@ -1183,6 +1193,39 @@
         }
         fishMesh.count = fishData.length;
         fishMesh.instanceMatrix.needsUpdate = true;
+
+        // Apply loaded fish school positions if import had valid fishSchools (same count)
+        if (Array.isArray(worldState.fishSchools) && worldState.fishSchools.length === fishSchools.length) {
+            for (let s = 0; s < fishSchools.length; s++) {
+                const loaded = worldState.fishSchools[s];
+                if (loaded && typeof loaded.x === 'number' && typeof loaded.y === 'number' && typeof loaded.z === 'number') {
+                    const sch = fishSchools[s];
+                    sch.x = loaded.x;
+                    sch.y = loaded.y;
+                    sch.z = loaded.z;
+                    if (typeof loaded.heading === 'number') sch.heading = loaded.heading;
+                    if (typeof loaded.speed === 'number') sch.speed = loaded.speed;
+                    if (typeof loaded.phase === 'number') sch.phase = loaded.phase;
+                    const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
+                    for (let i = 0; i < fishData.length; i++) {
+                        const f = fishData[i];
+                        if (f.school !== s) continue;
+                        f.x = sch.x + f.ox * ch + f.oz * sh;
+                        f.z = sch.z + f.oz * ch - f.ox * sh;
+                        f.y = sch.y + f.oy;
+                    }
+                }
+            }
+            for (let i = 0; i < fishData.length; i++) {
+                const f = fishData[i];
+                fishDummy.position.set(f.x, f.y, f.z);
+                fishDummy.rotation.set(0, f.rotY, 0);
+                fishDummy.scale.set(f.scale * 1.05, f.scale * 0.72, f.scale * 1.25);
+                fishDummy.updateMatrix();
+                fishMesh.setMatrixAt(i, fishDummy.matrix);
+            }
+            fishMesh.instanceMatrix.needsUpdate = true;
+        }
 
         // --- UUV ---
         const droneGroup = new THREE.Group();
@@ -1946,20 +1989,32 @@
 
         // --- Data Management Handlers ---
         btnExport.addEventListener('click', () => {
-            // Generate Terrain Height Map for Export
+            // Terrain: sampled height map for reference (terrain is reproducible from seed)
             const terrainMap = [];
-            const step = 10; // Sample every 10 meters to keep file size reasonable
+            const step = 10;
             const half = MAP_HALF_SIZE;
-            
             for (let x = -half; x <= half; x += step) {
                 for (let z = -half; z <= half; z += step) {
                     const h = getTerrainHeight(x, z);
-                    if (h > REEF_FLOOR - 6.0) {
-                        terrainMap.push({x: Math.round(x), z: Math.round(z), y: parseFloat(h.toFixed(1))});
-                    }
+                    if (h > REEF_FLOOR - 6.0) terrainMap.push({ x: Math.round(x), z: Math.round(z), y: parseFloat(h.toFixed(1)) });
                 }
             }
             worldState.terrainMap = terrainMap;
+            worldState.dataVersion = DATA_VERSION;
+
+            // Device initial position (current UUV pose at export time)
+            worldState.deviceInitialPosition = {
+                x: droneGroup.position.x,
+                y: droneGroup.position.y,
+                z: droneGroup.position.z,
+                rotationY: droneGroup.rotation.y
+            };
+
+            // Fish schools: centers and motion params (activity range is global map + coast/deep logic in code)
+            worldState.fishSchools = fishSchools.map(s => ({
+                x: s.x, y: s.y, z: s.z,
+                heading: s.heading, speed: s.speed, phase: s.phase
+            }));
 
             const dataStr = JSON.stringify(worldState);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -1975,18 +2030,20 @@
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = function(ev) {
                 try {
-                    const contents = e.target.result;
+                    const contents = ev.target.result;
                     const parsed = JSON.parse(contents);
-                    // Basic validation
-                    if (parsed.seed && parsed.mountainBuildings) {
-                        localStorage.setItem(STORAGE_KEY, contents);
-                        location.reload(); // Reload to apply
-                    } else {
+                    if (!parsed || typeof parsed !== 'object') {
                         alert("Invalid map data file.");
+                        return;
                     }
-                } catch(err) { console.error(err); alert("Error parsing file"); }
+                    localStorage.setItem(STORAGE_KEY, contents);
+                    location.reload();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error parsing file.");
+                }
             };
             reader.readAsText(file);
         });
@@ -2054,8 +2111,6 @@
             target.mesh = group;
         }
 
-        const UNDERWATER_POLLUTION_COUNT = 6;
-        const POLLUTION_CLUSTER_COUNT = 2;
         const POINTS_PER_CLUSTER = 9;
         const CLUSTER_RADIUS_MIN = 8;
         const CLUSTER_RADIUS_MAX = 35;
@@ -2163,16 +2218,25 @@
             fishDistanceRows.push({ labelEl: left, distEl: right, schoolIndex: s });
         }
 
-        if (worldState.pollutionClusters.length > 1) {
+        // Device initial position: from loaded data or from Pollution Cluster 2
+        if (worldState.deviceInitialPosition) {
+            const d = worldState.deviceInitialPosition;
+            droneGroup.position.set(d.x, d.y, d.z);
+            droneGroup.rotation.y = typeof d.rotationY === 'number' ? d.rotationY : droneGroup.rotation.y;
+        } else if (worldState.pollutionClusters.length > 1) {
             const c2 = worldState.pollutionClusters[1];
             const nearOffset = 26;
             const dx = c2.centerX - nearOffset;
             const dz = c2.centerZ - nearOffset;
             droneGroup.position.set(dx, WATER_SURFACE_Y, dz);
             droneGroup.rotation.y = Math.atan2(c2.centerX - dx, -(c2.centerZ - dz)) + Math.PI / 2;
+        }
 
-            // ensure at least one fish school is near the initial device position (surface cluster 2)
-            if (fishSchools.length > 0) {
+        const fishPositionsLoaded = Array.isArray(worldState.fishSchools) && worldState.fishSchools.length === fishSchools.length;
+        if (!fishPositionsLoaded) {
+            // Ensure at least one fish school is near the initial device position (surface cluster 2)
+            if (worldState.pollutionClusters.length > 1 && fishSchools.length > 0) {
+                const dx = droneGroup.position.x, dz = droneGroup.position.z;
                 const s = 0;
                 const sch = fishSchools[s];
                 sch.x = dx + 40;
@@ -2180,45 +2244,48 @@
                 const th0 = getTerrainHeight(sch.x, sch.z);
                 const surf0 = WATER_SURFACE_Y + getSurfaceWave(sch.x, sch.z, 0.0);
                 sch.y = Math.min(surf0 - 18, Math.max(th0 + 6, WATER_SURFACE_Y - 38));
-                sch.heading = Math.atan2(c2.centerX - sch.x, -(c2.centerZ - sch.z));
-
+                sch.heading = Math.atan2(worldState.pollutionClusters[1].centerX - sch.x, -(worldState.pollutionClusters[1].centerZ - sch.z));
+                const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
                 for (let i = 0; i < fishData.length; i++) {
                     const f = fishData[i];
                     if (f.school !== s) continue;
-                    const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
                     f.x = sch.x + f.ox * ch + f.oz * sh;
                     f.z = sch.z + f.oz * ch - f.ox * sh;
                     f.y = sch.y + f.oy;
                 }
             }
-        }
-
-        // Also anchor several fish schools near seabed (non-cluster) pollution targets,
-        // so deep pollutants feel "alive" with local marine life.
-        if (worldState.finalUsers && worldState.finalUsers.length > 0 && fishSchools.length > 1) {
-            const maxAnchored = Math.min(3, worldState.finalUsers.length, fishSchools.length - 1);
-            for (let k = 0; k < maxAnchored; k++) {
-                const p = worldState.finalUsers[k];
-                const s = 1 + k;
-                const sch = fishSchools[s];
-                // Place the school slightly offset from the pollutant barrel so it does not overlap the mesh directly.
-                sch.x = p.x + 18 * Math.cos(k * 2.1);
-                sch.z = p.z + 18 * Math.sin(k * 2.1);
-                const th0 = getTerrainHeight(sch.x, sch.z);
-                const surf0 = WATER_SURFACE_Y + getSurfaceWave(sch.x, sch.z, 0.0);
-                // Keep the school close to the seabed, but still with some clearance above the terrain.
-                sch.y = Math.min(surf0 - 20, Math.max(th0 + 5, p.y + 4));
-                sch.heading = Math.random() * Math.PI * 2;
-
-                for (let i = 0; i < fishData.length; i++) {
-                    const f = fishData[i];
-                    if (f.school !== s) continue;
+            // Anchor several fish schools near seabed (non-cluster) pollution targets
+            if (worldState.finalUsers && worldState.finalUsers.length > 0 && fishSchools.length > 1) {
+                const maxAnchored = Math.min(3, worldState.finalUsers.length, fishSchools.length - 1);
+                for (let k = 0; k < maxAnchored; k++) {
+                    const p = worldState.finalUsers[k];
+                    const s = 1 + k;
+                    const sch = fishSchools[s];
+                    sch.x = p.x + 18 * Math.cos(k * 2.1);
+                    sch.z = p.z + 18 * Math.sin(k * 2.1);
+                    const th0 = getTerrainHeight(sch.x, sch.z);
+                    const surf0 = WATER_SURFACE_Y + getSurfaceWave(sch.x, sch.z, 0.0);
+                    sch.y = Math.min(surf0 - 20, Math.max(th0 + 5, p.y + 4));
+                    sch.heading = Math.random() * Math.PI * 2;
                     const ch = Math.cos(sch.heading), sh = Math.sin(sch.heading);
-                    f.x = sch.x + f.ox * ch + f.oz * sh;
-                    f.z = sch.z + f.oz * ch - f.ox * sh;
-                    f.y = sch.y + f.oy;
+                    for (let i = 0; i < fishData.length; i++) {
+                        const f = fishData[i];
+                        if (f.school !== s) continue;
+                        f.x = sch.x + f.ox * ch + f.oz * sh;
+                        f.z = sch.z + f.oz * ch - f.ox * sh;
+                        f.y = sch.y + f.oy;
+                    }
                 }
             }
+            for (let i = 0; i < fishData.length; i++) {
+                const f = fishData[i];
+                fishDummy.position.set(f.x, f.y, f.z);
+                fishDummy.rotation.set(0, f.rotY, 0);
+                fishDummy.scale.set(f.scale * 1.05, f.scale * 0.72, f.scale * 1.25);
+                fishDummy.updateMatrix();
+                fishMesh.setMatrixAt(i, fishDummy.matrix);
+            }
+            fishMesh.instanceMatrix.needsUpdate = true;
         }
 
         // --- Physics Vars (Simple Mode) ---
