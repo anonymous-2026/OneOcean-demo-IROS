@@ -146,8 +146,6 @@
         <button id="btn-task1" class="task-btn active">Task 1 — Surface Pollution Cleanup</button>
         <button id="btn-task2" class="task-btn">Task 2 — Underwater Pollution Lift</button>
         <button id="btn-task3" class="task-btn">Task 3 — Fish Protection (Herding)</button>
-        <button id="btn-task4" class="task-btn">Task 4 — Area Scan (3D Terrain)</button>
-        <button id="btn-task5" class="task-btn">Task 5 — Pipeline Inspection (Leak Detection)</button>
 
         <div class="divider"></div>
 
@@ -2698,8 +2696,6 @@
         const btnTask1 = document.getElementById('btn-task1');
         const btnTask2 = document.getElementById('btn-task2');
         const btnTask3 = document.getElementById('btn-task3');
-        const btnTask4 = document.getElementById('btn-task4');
-        const btnTask5 = document.getElementById('btn-task5');
         const btnBack = document.getElementById('btn-back');
         const scanPanelEl = document.getElementById('scan-panel');
         btnBack.addEventListener('click', () => location.href = 'index.html');
@@ -2720,8 +2716,6 @@
             let group = null;
             if (activeTask === 'TASK1') group = task1Vehicles;
             else if (activeTask === 'TASK2') group = task2Vehicles;
-            else if (activeTask === 'TASK4') group = task4Vehicles;
-            else if (activeTask === 'TASK5') group = task5Vehicles;
             else group = task3Vehicles;
             if (!group || group.length === 0) return followCenter.clone();
             const c = new THREE.Vector3();
@@ -2747,36 +2741,17 @@
             task1Group.visible = (taskId === 'TASK1');
             task2Group.visible = (taskId === 'TASK2');
             task3Group.visible = (taskId === 'TASK3');
-            task4Group.visible = (taskId === 'TASK4');
-            task5Group.visible = (taskId === 'TASK5');
             setActiveButton(btnTask1, taskId === 'TASK1');
             setActiveButton(btnTask2, taskId === 'TASK2');
             setActiveButton(btnTask3, taskId === 'TASK3');
-            setActiveButton(btnTask4, taskId === 'TASK4');
-            setActiveButton(btnTask5, taskId === 'TASK5');
 
-            if (scanPanelEl) scanPanelEl.classList.toggle('visible', taskId === 'TASK4');
+            if (scanPanelEl) scanPanelEl.classList.remove('visible');
             const deviceViewEl = document.getElementById('device-view-panel');
             const deviceGridEl = document.getElementById('device-grid-panel');
-            if (taskId === 'TASK4') {
-                ensureScanPanel();
-                ensureDeviceViewPanels();
-                if (hud.devicePosRow) hud.devicePosRow.style.display = '';
-                if (deviceViewEl) { deviceViewEl.classList.add('visible'); deviceViewEl.classList.remove('task5-device-panel'); }
-                if (deviceGridEl) deviceGridEl.classList.add('visible');
-                if (hud.leaksMarkedRow) hud.leaksMarkedRow.style.display = 'none';
-            } else if (taskId === 'TASK5') {
-                ensureDeviceViewPanels();
-                if (hud.devicePosRow) hud.devicePosRow.style.display = '';
-                if (hud.leaksMarkedRow) hud.leaksMarkedRow.style.display = '';
-                if (deviceViewEl) { deviceViewEl.classList.add('visible'); deviceViewEl.classList.add('task5-device-panel'); }
-                if (deviceGridEl) deviceGridEl.classList.remove('visible');
-            } else {
-                if (hud.devicePosRow) hud.devicePosRow.style.display = 'none';
-                if (hud.leaksMarkedRow) hud.leaksMarkedRow.style.display = 'none';
-                if (deviceViewEl) { deviceViewEl.classList.remove('visible'); deviceViewEl.classList.remove('task5-device-panel'); }
-                if (deviceGridEl) deviceGridEl.classList.remove('visible');
-            }
+            if (hud.devicePosRow) hud.devicePosRow.style.display = 'none';
+            if (hud.leaksMarkedRow) hud.leaksMarkedRow.style.display = 'none';
+            if (deviceViewEl) { deviceViewEl.classList.remove('visible'); deviceViewEl.classList.remove('task5-device-panel'); }
+            if (deviceGridEl) deviceGridEl.classList.remove('visible');
 
             lastFollowCenter = null;
             taskElapsedTime = 0;
@@ -2803,21 +2778,6 @@
                 hud.uuvs.textContent = String(TASK3_UUVS);
                 hud.desc.textContent = `${TASK3_UUVS} UUVs. Fish protection: a school spawns near shore, then UUVs coordinate behind and around the school to drive it along a deep-sea direction. Task progress is tracked in 4 stages (each quarter of the path counts as a milestone), and full success is reached when the school arrives near the deep-sea corner/target at the deepest zone.`;
                 resetTask3();
-            } else if (taskId === 'TASK4') {
-                hud.sourcesTitle.textContent = ' (Task 4)';
-                hud.sources.innerHTML = '—';
-                hud.active.textContent = 'Task 4';
-                hud.uuvs.textContent = '1';
-                hud.desc.textContent = `1 UUV. Area scan: the UUV performs a lawn-mower scan over a bounded rectangle. Nearby cells are marked as scanned, and the panel renders a live 3D terrain grid reconstructed from the scanned cells.`;
-                resetTask4();
-            } else {
-                hud.sourcesTitle.textContent = ' (Task 5)';
-                hud.sources.innerHTML = '—';
-                hud.active.textContent = 'Task 5';
-                hud.uuvs.textContent = '1';
-                hud.desc.textContent = `1 UUV. Pipeline inspection: the UUV follows the pipe path and detects 3 leak points. When the device gets within range, it marks the leak with a red marker and label; the first-person panel shows the inspection view along the pipeline.`;
-                resetTask5();
-                if (hud.leaksMarked) hud.leaksMarked.textContent = '0/3';
             }
             // Camera: follow new group from its center + offset (Task 3 closer)
             followCenter = computeSwarmCenter();
@@ -2825,8 +2785,6 @@
             controls.target.copy(followCenter);
             const camOffset = taskId === 'TASK3' ? new THREE.Vector3(44, 13, 0)
                 : taskId === 'TASK2' ? new THREE.Vector3(26, 14, 32)
-                : taskId === 'TASK4' ? new THREE.Vector3(8, 4, 10)
-                : taskId === 'TASK5' ? new THREE.Vector3(8, 4, 10)
                 : new THREE.Vector3(48, 25, 58);
             camera.position.copy(followCenter).add(camOffset);
             controls.update();
@@ -2835,8 +2793,6 @@
         btnTask1.addEventListener('click', () => setTask('TASK1'));
         btnTask2.addEventListener('click', () => setTask('TASK2'));
         btnTask3.addEventListener('click', () => setTask('TASK3'));
-        btnTask4.addEventListener('click', () => setTask('TASK4'));
-        btnTask5.addEventListener('click', () => setTask('TASK5'));
 
         // =========================
         // Animate
@@ -2893,8 +2849,6 @@
             // tasks update
             if (activeTask === 'TASK1') updateTask1(dt, time);
             else if (activeTask === 'TASK2') updateTask2(dt, time);
-            else if (activeTask === 'TASK4') updateTask4(dt, time);
-            else if (activeTask === 'TASK5') updateTask5(dt, time);
             else updateTask3(dt, time);
 
             // follow camera translation

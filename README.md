@@ -8,7 +8,7 @@ This folder provides a lightweight, GitHub Pages–friendly underwater web demo 
 
 ## Task Demos (tasks.html)
 
-`tasks.html` showcases five representative tasks in the same ocean environment style as `index.html`:
+`tasks.html` showcases three representative tasks in the same ocean environment style as `index.html`:
 
 1. **Task 1 — Surface Pollution Cleanup (Multi-UUV)**
    - Surface pollution sources are visualized as yellow barrels with visible diffusion.
@@ -28,15 +28,3 @@ This folder provides a lightweight, GitHub Pages–friendly underwater web demo 
    - Progress is tracked in 4 stages (each quarter of the path is a milestone); reaching the deep-sea corner/target counts as full success.
    
    <img src="example/task3.png" width="720" />
-
-4. **Task 4 — Area Scan (3D Terrain)**
-   - One UUV performs a lawn-mower scan over a bounded area and marks scanned cells.
-   - A live 3D terrain grid preview is reconstructed from the scanned cells.
-   
-   <img src="example/task4.png" width="720" />
-
-5. **Task 5 — Pipeline Inspection (Leak Detection)**
-   - One UUV follows a pipeline path and detects three leak points along the route.
-   - When a leak is detected, it is marked with a red marker/label; the device view panel shows the inspection camera.
-   
-   <img src="example/task5.png" width="720" />
