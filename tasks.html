@@ -15,7 +15,7 @@
             left: 20px;
             background: rgba(240, 240, 240, 0.95);
             padding: 15px;
-            width: 260px;
+            width: 340px;
             max-height: 90vh;
             overflow-y: auto;
             border-radius: 2px;
@@ -122,6 +122,16 @@
         <div class="ui-row"><span class="ui-label">UUVs</span><span class="ui-value" id="hud-uuvs">6</span></div>
         <div class="ui-row"><span class="ui-label">PROGRESS</span><span class="ui-value" id="hud-progress">0%</span></div>
         <div class="ui-row"><span class="ui-label">TIME</span><span class="ui-value" id="hud-time">t=0.0s</span></div>
+
+        <div class="divider"></div>
+        <div class="section-title">Environment <span class="section-hint">(from one UUV)</span></div>
+        <div class="ui-row"><span class="ui-label">POS</span><span class="ui-value" id="hud-pos">—</span></div>
+        <div class="ui-row"><span class="ui-label">SPEED</span><span class="ui-value" id="hud-speed">—</span></div>
+        <div class="ui-row"><span class="ui-label">ACCEL</span><span class="ui-value" id="hud-accel">—</span></div>
+        <div class="ui-row"><span class="ui-label">CURRENT</span><span class="ui-value" id="hud-current">—</span></div>
+        <div class="ui-row"><span class="ui-label">SURFACE Y</span><span class="ui-value" id="hud-surface-y">—</span></div>
+        <div class="ui-row"><span class="ui-label">SEAFLOOR Y</span><span class="ui-value" id="hud-seafloor-y">—</span></div>
+        <div class="ui-row"><span class="ui-label">DEPTH</span><span class="ui-value" id="hud-depth">—</span></div>
 
         <div class="divider"></div>
         <div class="section-title">Target / Source Status <span id="hud-sources-title" class="section-hint">(Task 1)</span></div>
@@ -526,6 +536,11 @@
             wind.multiplyScalar(occ);
             if (wind.length() > 11) wind.multiplyScalar(11 / wind.length());
             return wind;
+        }
+
+        function getCardinalDirection(d) {
+            const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+            return dirs[Math.round(((d%=360)<0?d+360:d)/45)%8];
         }
 
         // =========================
@@ -1860,10 +1875,75 @@
             note: document.getElementById('hud-note'),
             desc: document.getElementById('task-desc'),
             sources: document.getElementById('hud-sources'),
-            sourcesTitle: document.getElementById('hud-sources-title')
+            sourcesTitle: document.getElementById('hud-sources-title'),
+            envPos: document.getElementById('hud-pos'),
+            envSpeed: document.getElementById('hud-speed'),
+            envAccel: document.getElementById('hud-accel'),
+            envCurrent: document.getElementById('hud-current'),
+            envSurfaceY: document.getElementById('hud-surface-y'),
+            envSeafloorY: document.getElementById('hud-seafloor-y'),
+            envDepth: document.getElementById('hud-depth')
         };
 
         let taskElapsedTime = 0;
+        let envPrevPos = null;
+        let envPrevVel = null;
+
+        function getRepresentativeUUV() {
+            if (activeTask === 'TASK1' && task1Vehicles && task1Vehicles.length) return task1Vehicles[0];
+            if (activeTask === 'TASK2' && task2Vehicles && task2Vehicles.length) return task2Vehicles[0];
+            if (activeTask === 'TASK3' && task3Vehicles && task3Vehicles.length) return task3Vehicles[0];
+            return null;
+        }
+
+        function updateEnvironmentHUD(dt, time) {
+            const u = getRepresentativeUUV();
+            if (!u) {
+                hud.envPos.textContent = '—';
+                hud.envSpeed.textContent = '—';
+                hud.envAccel.textContent = '—';
+                hud.envCurrent.textContent = '—';
+                hud.envSurfaceY.textContent = '—';
+                hud.envSeafloorY.textContent = '—';
+                hud.envDepth.textContent = '—';
+                envPrevPos = null;
+                envPrevVel = null;
+                return;
+            }
+
+            const pos = u.position.clone();
+            hud.envPos.textContent = `[${pos.x.toFixed(0)},${pos.y.toFixed(1)},${pos.z.toFixed(0)}]`;
+
+            // Surface/seafloor/depth (index-style surface waves)
+            const surfaceY = WATER_SURFACE_Y + getSurfaceWave(pos.x, pos.z, time);
+            const seafloorY = getTerrainHeight(pos.x, pos.z);
+            const depth = Math.max(0, surfaceY - pos.y);
+            hud.envSurfaceY.textContent = surfaceY.toFixed(1);
+            hud.envSeafloorY.textContent = seafloorY.toFixed(1);
+            hud.envDepth.textContent = `${depth.toFixed(1)} m`;
+
+            // Current (index-style magnitude + cardinal direction)
+            const cur = getCurrentAt(pos, time);
+            const ad = Math.atan2(cur.z, cur.x) * (180 / Math.PI);
+            const card = getCardinalDirection((90 - ad + 360) % 360);
+            hud.envCurrent.textContent = `${cur.length().toFixed(1)} m/s ${card}`;
+
+            // Speed/accel from position delta (robust across lerp phases)
+            if (!envPrevPos || dt <= 1e-6) {
+                envPrevPos = pos.clone();
+                envPrevVel = new THREE.Vector3();
+                hud.envSpeed.textContent = '0.0 m/s';
+                hud.envAccel.textContent = '0.0 m/s²';
+                return;
+            }
+            const vel = pos.clone().sub(envPrevPos).multiplyScalar(1 / Math.max(dt, 1e-6));
+            const speed = vel.length();
+            const accel = envPrevVel ? vel.clone().sub(envPrevVel).multiplyScalar(1 / Math.max(dt, 1e-6)).length() : 0;
+            hud.envSpeed.textContent = `${speed.toFixed(1)} m/s`;
+            hud.envAccel.textContent = `${accel.toFixed(1)} m/s²`;
+            envPrevPos.copy(pos);
+            envPrevVel.copy(vel);
+        }
 
         const btnTask1 = document.getElementById('btn-task1');
         const btnTask2 = document.getElementById('btn-task2');
@@ -1923,21 +2003,21 @@
                 hud.sourcesTitle.textContent = ' (Task 1)';
                 hud.active.textContent = 'Task 1';
                 hud.uuvs.textContent = String(TASK1_UUVS);
-                hud.desc.textContent = '4 UUVs. Each UUV cleans one surface pollution source: approach a yellow barrel, stay close to neutralize (visible purifier); barrel then changes color and diffusion stops. UUV moves to next source until all are done.';
+                hud.desc.textContent = `${TASK1_UUVS} UUVs. Surface pollution cleanup: each UUV takes one yellow barrel source at a time, approaches from different directions, stays very close for a short neutralization window (visible purifier), then the diffusion stops and the source changes color. The UUV then moves to the next source until all are cleaned.`;
                 resetTask1();
             } else if (taskId === 'TASK2') {
                 hud.sourcesTitle.textContent = ' (Task 2)';
                 hud.sources.innerHTML = '—';
                 hud.active.textContent = 'Task 2';
                 hud.uuvs.textContent = String(TASK2_UUVS);
-                hud.desc.textContent = '5 UUVs. Four attach front/back/left/right and lift the barrel off the seabed; hold off-terrain; then the 5th attaches from below and the team ascends to the surface to complete.';
+                hud.desc.textContent = `${TASK2_UUVS} UUVs. Underwater lift: four UUVs attach tightly from front/back/left/right to lift a barrel away from seabed terrain and keep it off the relief for a short duration; then the fifth UUV attaches from below and the team carries the barrel upward in formation until it reaches the surface for completion.`;
                 resetTask2();
             } else {
                 hud.sourcesTitle.textContent = ' (Task 3)';
                 hud.sources.innerHTML = '—';
                 hud.active.textContent = 'Task 3';
                 hud.uuvs.textContent = String(TASK3_UUVS);
-                hud.desc.textContent = '8 UUVs. Fish spawn near shore; UUVs herd the school toward the deep-sea target. Completion when the school reaches the deepest zone. UUV motion is rigid (no fish-like sway).';
+                hud.desc.textContent = `${TASK3_UUVS} UUVs. Fish protection: a school spawns near shore, then UUVs coordinate behind and around the school to drive it along a deep-sea direction. Task progress is tracked in 4 stages (each quarter of the path counts as a milestone), and full success is reached when the school arrives near the deep-sea corner/target at the deepest zone.`;
                 resetTask3();
             }
             // Camera: follow new group from its center + offset (Task 3 closer)
@@ -2013,6 +2093,9 @@
             // follow camera translation
             followCenter = computeSwarmCenter();
             applyFollowCenter(followCenter);
+
+            // environment HUD (learned from index-style display)
+            updateEnvironmentHUD(dt, time);
 
             let taskDone = false;
             if (activeTask === 'TASK1') taskDone = surfaceClusters.length > 0 && surfaceClusters.every(c => c.cleaned);
