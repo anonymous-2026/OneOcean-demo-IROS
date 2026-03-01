@@ -30,3 +30,13 @@ This folder provides a lightweight, GitHub Pages–friendly underwater web demo 
 5. **Task 5 — Pipeline Inspection (Leak Detection)**
    - One UUV follows a pipeline path and detects three leak points along the route.
    - When a leak is detected, it is marked with a red marker/label; the device view panel shows the inspection camera.
+
+## Screenshots
+
+| Task | Screenshot |
+|---|---|
+| Task 1 — Surface Pollution Cleanup | <img src="example/task1.png" width="520" /> |
+| Task 2 — Underwater Pollution Lift | <img src="example/task2.png" width="520" /> |
+| Task 3 — Fish Protection (Herding) | <img src="example/task3.png" width="520" /> |
+| Task 4 — Area Scan (3D Terrain) | <img src="example/task4.png" width="520" /> |
+| Task 5 — Pipeline Inspection | <img src="example/task5.png" width="520" /> |
