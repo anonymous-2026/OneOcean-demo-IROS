@@ -1582,7 +1582,13 @@
             task3Vehicles.push(u);
         }
 
-        const task3State = { t: 0.0, done: false };
+        const task3State = {
+            t: 0.0,
+            done: false,
+            // Task progress is split into 4 stages along the path from near-shore spawn -> deep-sea target.
+            // Stage milestones are considered achieved at 25%, 50%, 75%, and full completion near the target.
+            stageMilestones: [false, false, false, false]
+        };
         const task3FishDummy = new THREE.Object3D();
         const task3SmoothedCenter = new THREE.Vector3();
         const task3FormationCenter = new THREE.Vector3();
@@ -1616,6 +1622,10 @@
             }
             task3State.t = 0.0;
             task3State.done = false;
+            task3State.stageMilestones[0] = false;
+            task3State.stageMilestones[1] = false;
+            task3State.stageMilestones[2] = false;
+            task3State.stageMilestones[3] = false;
             task3SmoothedCenter.set(0, 0, 0);
             task3FormationCenter.set(0, 0, 0);
         }
@@ -1808,12 +1818,34 @@
             const done = d < 70 && deepEnough && task3State.t > 10.0;
             task3State.done = task3State.done || done;
 
-            hud.progress.textContent = task3State.done ? 'Done' : `d=${d.toFixed(1)}m`;
-            hud.note.textContent = '8 UUVs herd fish toward deep sea (goal + repulsion).';
+            // 4-stage progress: project schoolCenter onto the (spawn -> deep target) direction in XZ plane.
+            const sx0 = fishSpawnCenter.x, sz0 = fishSpawnCenter.z;
+            const tx0 = deepSeaTarget.x, tz0 = deepSeaTarget.z;
+            const vx = tx0 - sx0, vz = tz0 - sz0;
+            const denom = (vx * vx + vz * vz) || 1;
+            const px = schoolCenter.x - sx0, pz = schoolCenter.z - sz0;
+            let tprog = (px * vx + pz * vz) / denom;
+            tprog = Math.max(0, Math.min(1, tprog));
+            const stageNow = Math.max(1, Math.min(4, Math.floor(tprog * 4) + 1));
+
+            if (tprog >= 0.25) task3State.stageMilestones[0] = true;
+            if (tprog >= 0.50) task3State.stageMilestones[1] = true;
+            if (tprog >= 0.75) task3State.stageMilestones[2] = true;
+            if (task3State.done) task3State.stageMilestones[3] = true;
+
+            const stagesDone = task3State.stageMilestones.reduce((acc, v) => acc + (v ? 1 : 0), 0);
+            const pct = Math.round(tprog * 100);
+
+            hud.progress.textContent = task3State.done ? `Done (4/4)` : `Stage ${stageNow}/4 (${pct}%)`;
+            hud.note.textContent = `Stages: ${task3State.stageMilestones[0] ? '✓' : '·'}1/4 ${task3State.stageMilestones[1] ? '✓' : '·'}2/4 ${task3State.stageMilestones[2] ? '✓' : '·'}3/4 ${task3State.stageMilestones[3] ? '✓' : '·'}4/4 (completed: ${stagesDone}/4)`;
             const sc = schoolCenter;
             const statusCls = task3State.done ? 'done' : 'pending';
             const statusText = task3State.done ? 'Done (reached deep sea)' : 'Herding to deep sea';
-            hud.sources.innerHTML = '<div>School center: (' + Math.round(sc.x) + ', ' + Math.round(sc.y) + ', ' + Math.round(sc.z) + ')</div><div>Target (deep): (' + Math.round(deepSeaTarget.x) + ', ' + Math.round(deepSeaTarget.y) + ', ' + Math.round(deepSeaTarget.z) + ')</div><div class="' + statusCls + '">' + statusText + '</div>';
+            hud.sources.innerHTML =
+                '<div>School center: (' + Math.round(sc.x) + ', ' + Math.round(sc.y) + ', ' + Math.round(sc.z) + ')</div>' +
+                '<div>Target (deep): (' + Math.round(deepSeaTarget.x) + ', ' + Math.round(deepSeaTarget.y) + ', ' + Math.round(deepSeaTarget.z) + ')</div>' +
+                '<div>Progress: ' + pct + '% | Current stage: ' + stageNow + '/4</div>' +
+                '<div class="' + statusCls + '">' + statusText + '</div>';
         }
 
         // =========================
