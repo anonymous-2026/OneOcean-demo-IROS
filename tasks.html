@@ -91,6 +91,28 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
 
+        /* UI toggle (bottom-left). Default ON (sidebar + back button visible). */
+        #btn-ui-toggle {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            z-index: 250;
+            padding: 10px 14px;
+            background: rgba(240, 240, 240, 0.95);
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            border-left: 5px solid #6f5cff;
+        }
+        #btn-ui-toggle.off {
+            opacity: 0.88;
+            border-left-color: #777;
+        }
+
         /* Optional task panels (Task 4/5) */
         #scan-panel, #device-view-panel, #device-grid-panel {
             position: fixed;
@@ -196,6 +218,7 @@
         <canvas id="device-grid-canvas"></canvas>
     </div>
 
+    <button id="btn-ui-toggle" title="Toggle UI">UI: ON</button>
     <button id="btn-back">&larr; Back to Index</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -2700,11 +2723,27 @@
         const btnTask3 = document.getElementById('btn-task3');
         const btnTask4 = document.getElementById('btn-task4');
         const btnTask5 = document.getElementById('btn-task5');
+        const btnUIToggle = document.getElementById('btn-ui-toggle');
         const btnBack = document.getElementById('btn-back');
         const scanPanelEl = document.getElementById('scan-panel');
         btnBack.addEventListener('click', () => location.href = 'index.html');
 
         let activeTask = 'TASK1';
+        let uiVisible = true;
+
+        function setUIVisible(v) {
+            uiVisible = !!v;
+            const uiPanel = document.getElementById('ui-panel');
+            if (uiPanel) uiPanel.style.display = uiVisible ? '' : 'none';
+            if (btnBack) btnBack.style.display = uiVisible ? '' : 'none';
+            if (btnUIToggle) {
+                btnUIToggle.textContent = uiVisible ? 'UI: ON' : 'UI: OFF';
+                btnUIToggle.classList.toggle('off', !uiVisible);
+            }
+        }
+
+        if (btnUIToggle) btnUIToggle.addEventListener('click', () => setUIVisible(!uiVisible));
+        setUIVisible(true);
 
         function setActiveButton(btn, active) {
             if (active) btn.classList.add('active');
