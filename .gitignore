@@ -44,7 +44,6 @@ env/
 venv/
 ENV/
 .venv
-.venv_demo_tools/
 
 # Node modules (if any)
 node_modules/
