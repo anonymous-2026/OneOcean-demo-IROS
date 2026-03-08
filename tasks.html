@@ -166,8 +166,8 @@
 
         <div class="section-title">Tasks</div>
         <button id="btn-task1" class="task-btn active">Task 1 — Surface Pollution Cleanup</button>
-        <button id="btn-task2" class="task-btn">Task 2 — Underwater Pollution Lift</button>
-        <button id="btn-task3" class="task-btn">Task 3 — Fish Protection (Herding)</button>
+        <button id="btn-task2" class="task-btn">Task 2 — Underwater Pollution Lift to Surface</button>
+        <button id="btn-task3" class="task-btn">Task 3 — Fish Protection / Herding</button>
         <button id="btn-task4" class="task-btn">Task 4 — Area Scan (3D Terrain)</button>
         <button id="btn-task5" class="task-btn">Task 5 — Pipeline Inspection (Leak Detection)</button>
 
@@ -1571,7 +1571,7 @@
         }
 
         // =========================
-        // Task 3: Fish protection (fish geometry & material same as index.html)
+        // Task 3: Fish protection / herding (fish geometry & material same as index.html)
         // =========================
         function createFishGeometry() {
             const g = new THREE.BufferGeometry();
@@ -2840,7 +2840,7 @@
                 hud.sources.innerHTML = '—';
                 hud.active.textContent = 'Task 3';
                 hud.uuvs.textContent = String(TASK3_UUVS);
-                hud.desc.textContent = `${TASK3_UUVS} UUVs. Fish protection: a school spawns near shore, then UUVs coordinate behind and around the school to drive it along a deep-sea direction. Task progress is tracked in 4 stages (each quarter of the path counts as a milestone), and full success is reached when the school arrives near the deep-sea corner/target at the deepest zone.`;
+                hud.desc.textContent = `${TASK3_UUVS} UUVs. Fish protection / herding: a school spawns near shore, then UUVs coordinate behind and around the school to drive it along a deep-sea direction. Task progress is tracked in 4 stages (each quarter of the path counts as a milestone), and full success is reached when the school arrives near the deep-sea corner/target at the deepest zone.`;
                 resetTask3();
             } else if (taskId === 'TASK4') {
                 hud.sourcesTitle.textContent = ' (Task 4)';
