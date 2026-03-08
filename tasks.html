@@ -2640,6 +2640,8 @@
         const TASK6_REACH = 16;
         const TASK6_HOLD_TIME = 2.5;
         const TASK6_UUVS = 6;
+        const TASK6_CLEARANCE = 9;
+        const TASK6_MARKER_HEIGHT = 30;
         const TASK6_FORMATION_OFFSETS = [
             new THREE.Vector3(0, 0, 0),
             new THREE.Vector3(-16, 0, 14),
@@ -2666,7 +2668,7 @@
         function buildTask6Decor() {
             if (task6PathLine && task6PathLine.parent) task6PathLine.parent.remove(task6PathLine);
             const pathPts = TASK6_PATH_POINTS.map(function (p) {
-                return new THREE.Vector3(p.x, getTerrainHeight(p.x, p.z) + 18, p.z);
+                return new THREE.Vector3(p.x, getTerrainHeight(p.x, p.z) + TASK6_MARKER_HEIGHT, p.z);
             });
             const pathGeo = new THREE.BufferGeometry().setFromPoints(pathPts);
             task6PathLine = new THREE.Line(
@@ -2677,7 +2679,7 @@
 
             for (let i = 0; i < TASK6_PATH_POINTS.length; i++) {
                 const p = TASK6_PATH_POINTS[i];
-                const y = getTerrainHeight(p.x, p.z) + 18;
+                const y = getTerrainHeight(p.x, p.z) + TASK6_MARKER_HEIGHT;
                 const marker = new THREE.Mesh(
                     new THREE.SphereGeometry(4.8, 20, 16),
                     new THREE.MeshBasicMaterial({
@@ -2752,7 +2754,7 @@
                 const off = TASK6_FORMATION_OFFSETS[i];
                 const desiredX = start.x + task6Right.x * off.x - task6LeaderForward.x * off.z;
                 const desiredZ = start.z + task6Right.z * off.x - task6LeaderForward.z * off.z;
-                const desiredY = Math.max(getTerrainHeight(desiredX, desiredZ) + 14, start.y + off.y);
+                const desiredY = getTerrainHeight(desiredX, desiredZ) + TASK6_CLEARANCE + off.y;
                 u.position.set(desiredX, desiredY, desiredZ);
                 u.rotation.set(0, heading, 0);
                 u.userData.motion.vel.set(0, 0, 0);
@@ -2766,7 +2768,7 @@
         function updateTask6(dt, time) {
             const leader = task6Vehicles[0];
             const target = TASK6_PATH_POINTS[Math.min(task6State.pathIndex, TASK6_PATH_POINTS.length - 1)];
-            const leadGoalY = Math.max(getTerrainHeight(target.x, target.z) + 14, target.y);
+            const leadGoalY = getTerrainHeight(target.x, target.z) + TASK6_CLEARANCE;
             const leadTarget = new THREE.Vector3(target.x, leadGoalY, target.z);
 
             if (!task6State.done) {
@@ -2799,7 +2801,7 @@
                 const dz = task6Right.z * off.x - task6LeaderForward.z * off.z;
                 const desiredX = leader.position.x + dx;
                 const desiredZ = leader.position.z + dz;
-                const desiredY = Math.max(getTerrainHeight(desiredX, desiredZ) + 14, leader.position.y + off.y);
+                const desiredY = getTerrainHeight(desiredX, desiredZ) + TASK6_CLEARANCE + off.y;
                 task6Desired.set(desiredX, desiredY, desiredZ);
                 const res = steerToYawOnly(u, task6Desired, dt, TASK6_SPEED * 0.98, 3.0);
                 errSum += res.dist;
