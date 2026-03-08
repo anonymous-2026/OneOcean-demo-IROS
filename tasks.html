@@ -75,6 +75,17 @@
         .source-status-list .pending { color: #666; }
 
         /* Back button must match index.html "Open Tasks" button */
+        #top-right-backdrop {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 250px;
+            height: 216px;
+            z-index: 190;
+            border-radius: 24px;
+            background: radial-gradient(circle at top right, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.18) 54%, rgba(0, 0, 0, 0.06) 78%, transparent 100%);
+            pointer-events: none;
+        }
         #btn-back {
             position: absolute;
             top: 122px;
@@ -248,6 +259,7 @@
         <canvas id="device-grid-canvas"></canvas>
     </div>
 
+    <div id="top-right-backdrop"></div>
     <div id="top-brand"><img src="example/logo.png" alt="OneOcean logo"></div>
     <button id="btn-ui-toggle" title="Toggle UI">UI: ON</button>
     <button id="btn-back">&larr; Back to Index</button>
@@ -2997,7 +3009,6 @@
             if (uiPanelEl) uiPanelEl.style.display = uiVisible ? '' : 'none';
             if (btnBack) btnBack.style.display = uiVisible ? '' : 'none';
             if (btnShowAll) btnShowAll.style.display = uiVisible ? '' : 'none';
-            if (topBrand) topBrand.style.display = uiVisible ? '' : 'none';
             if (btnUIToggle) {
                 btnUIToggle.textContent = uiVisible ? 'UI: ON' : 'UI: OFF';
                 btnUIToggle.classList.toggle('off', !uiVisible);
