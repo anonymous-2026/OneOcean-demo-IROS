@@ -2135,7 +2135,7 @@
                 const entry = new THREE.Vector3(entryX, getTerrainHeight(entryX, entryZ) + 14, entryZ);
                 steerToYawOnly(u, entry, dt, TASK4_SCAN_SPEED, 2.2);
                 vx = u.userData.motion.vel.x; vz = u.userData.motion.vel.z;
-                if (vx * vx + vz * vz > 0.1) u.rotation.y = Math.atan2(vx, vz) + Math.PI;
+                if (vx * vx + vz * vz > 0.1) u.rotation.y = Math.atan2(vx, vz);
                 if (u.position.distanceTo(entry) < 14) {
                     task4State.phase = 'SCAN';
                     task4State.row = 0;
@@ -2151,7 +2151,7 @@
                 const tgt = new THREE.Vector3(tgtX, getTerrainHeight(tgtX, z) + 14, z);
                 steerToYawOnly(u, tgt, dt, TASK4_SCAN_SPEED, 2.2);
                 vx = u.userData.motion.vel.x; vz = u.userData.motion.vel.z;
-                if (vx * vx + vz * vz > 0.1) u.rotation.y = Math.atan2(vx, vz) + Math.PI;
+                if (vx * vx + vz * vz > 0.1) u.rotation.y = Math.atan2(vx, vz);
                 if (u.position.distanceTo(tgt) < 10) {
                     task4State.row++;
                     if (task4State.row >= TASK4_SCAN_ROWS) {
@@ -2558,7 +2558,7 @@
             const dyaw = Math.atan2(
                 task5PathPoints[1].x - task5PathPoints[0].x,
                 task5PathPoints[1].z - task5PathPoints[0].z
-            ) + Math.PI;
+            );
             inspectUUV.rotation.y = dyaw;
             task5State.smoothYaw = dyaw;
             task5State.pathIndex = 1;
@@ -2628,7 +2628,7 @@
             }
             const tParam = Math.max(0, Math.min(1, (pathIdx - 0.5) / TASK5_PATH_SAMPLES));
             const tangent = task5PipeCurve.getTangent(tParam).normalize();
-            const targetYaw = Math.atan2(tangent.x, tangent.z) + Math.PI;
+            const targetYaw = Math.atan2(tangent.x, tangent.z);
             let d = targetYaw - task5State.smoothYaw;
             while (d > Math.PI) d -= 2 * Math.PI;
             while (d < -Math.PI) d += 2 * Math.PI;
