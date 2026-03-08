@@ -3144,11 +3144,11 @@
             followCenter = computeSwarmCenter();
             lastFollowCenter = null;
             controls.target.copy(followCenter);
-            const camOffset = taskId === 'TASK3' ? new THREE.Vector3(44, 13, 0)
-                : taskId === 'TASK2' ? new THREE.Vector3(26, 14, 32)
-                : taskId === 'TASK4' ? new THREE.Vector3(8, 4, 10)
-                : taskId === 'TASK5' ? new THREE.Vector3(8, 4, 10)
-                : taskId === 'TASK6' ? new THREE.Vector3(42, 18, 48)
+            const camOffset = taskId === 'TASK3' ? new THREE.Vector3(34, 11, 0)
+                : taskId === 'TASK2' ? new THREE.Vector3(20, 11, 24)
+                : taskId === 'TASK4' ? new THREE.Vector3(6, 3, 7)
+                : taskId === 'TASK5' ? new THREE.Vector3(6, 3, 7)
+                : taskId === 'TASK6' ? new THREE.Vector3(30, 14, 34)
                 : new THREE.Vector3(48, 25, 58);
             camera.position.copy(followCenter).add(camOffset);
             controls.update();
