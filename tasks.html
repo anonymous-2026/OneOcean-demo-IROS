@@ -2736,13 +2736,6 @@
             done: false,
             avgError: 0
         };
-        function applyYawOffset(vehicle, offset) {
-            if (!offset) return;
-            let y = vehicle.rotation.y + offset;
-            while (y > Math.PI) y -= Math.PI * 2;
-            while (y < -Math.PI) y += Math.PI * 2;
-            vehicle.rotation.y = y;
-        }
 
         function resetTask6() {
             task6State.pathIndex = 1;
@@ -2752,7 +2745,7 @@
 
             const start = TASK6_PATH_POINTS[0];
             const next = TASK6_PATH_POINTS[1];
-            const heading = Math.atan2(next.x - start.x, next.z - start.z) + Math.PI;
+            const heading = Math.atan2(next.x - start.x, next.z - start.z);
             task6LeaderForward.set(next.x - start.x, 0, next.z - start.z).normalize();
             task6Right.set(task6LeaderForward.z, 0, -task6LeaderForward.x);
 
@@ -2780,7 +2773,6 @@
 
             if (!task6State.done) {
                 const leadRes = steerToYawOnly(leader, leadTarget, dt, TASK6_SPEED, 2.6);
-                applyYawOffset(leader, Math.PI);
                 if (leadRes.dist < TASK6_REACH && task6State.pathIndex < TASK6_PATH_POINTS.length - 1) {
                     task6State.pathIndex++;
                 } else if (leadRes.dist < TASK6_REACH && task6State.pathIndex === TASK6_PATH_POINTS.length - 1) {
@@ -2812,7 +2804,6 @@
                 const desiredY = getTerrainHeight(desiredX, desiredZ) + TASK6_CLEARANCE + off.y;
                 task6Desired.set(desiredX, desiredY, desiredZ);
                 const res = steerToYawOnly(u, task6Desired, dt, TASK6_SPEED * 0.98, 3.0);
-                applyYawOffset(u, Math.PI);
                 errSum += res.dist;
             }
             task6State.avgError = errSum / Math.max(1, task6Vehicles.length - 1);
