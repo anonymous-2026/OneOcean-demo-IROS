@@ -155,13 +155,13 @@
         }
         #top-right-backdrop {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 250px;
-            height: 168px;
+            top: -38px;
+            right: -34px;
+            width: 260px;
+            height: 260px;
             z-index: 190;
-            border-radius: 24px;
-            background: radial-gradient(circle at top right, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.18) 52%, rgba(0, 0, 0, 0.06) 76%, transparent 100%);
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 24%, rgba(8, 30, 92, 0.9) 0%, rgba(8, 30, 92, 0.62) 34%, rgba(8, 30, 92, 0.28) 56%, rgba(8, 30, 92, 0.08) 72%, rgba(8, 30, 92, 0) 100%);
             pointer-events: none;
         }
         #top-brand {
@@ -2724,7 +2724,7 @@
                 const schoolPos = new THREE.Vector3(sch.x, sch.y, sch.z);
                 const dist = droneGroup.position.distanceTo(schoolPos);
                 const posStr = `[${sch.x.toFixed(0)},${sch.y.toFixed(0)},${sch.z.toFixed(0)}]`;
-                rowInfo.distEl.innerHTML = `${posStr} <span style="color:#ff9800">| Dist: ${dist.toFixed(1)} m</span>`;
+                rowInfo.distEl.innerHTML = `${posStr} <span style="color:#27ae60">| Distance: ${dist.toFixed(1)} m</span>`;
                 rowInfo.labelEl.title = `Fish School ${rowInfo.schoolIndex + 1}`;
             });
 
