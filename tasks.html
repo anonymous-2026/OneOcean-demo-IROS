@@ -170,6 +170,7 @@
         <button id="btn-task3" class="task-btn">Task 3 — Fish Protection / Herding</button>
         <button id="btn-task4" class="task-btn">Task 4 — Area Scan (3D Terrain)</button>
         <button id="btn-task5" class="task-btn">Task 5 — Pipeline Inspection (Leak Detection)</button>
+        <button id="btn-task6" class="task-btn">Task 6 — Formation Transit</button>
 
         <div class="divider"></div>
 
@@ -1006,6 +1007,7 @@
         const task3Group = new THREE.Group(); scene.add(task3Group);
         const task4Group = new THREE.Group(); scene.add(task4Group);
         const task5Group = new THREE.Group(); scene.add(task5Group);
+        const task6Group = new THREE.Group(); scene.add(task6Group);
 
         // =========================
         // Task 1: Surface pollution cleanup (larger scale, surface float, labels)
@@ -2631,6 +2633,212 @@
         }
 
         // =========================
+        // Task 6: Formation transit
+        // =========================
+        const TASK6_SCALE = 1.9;
+        const TASK6_SPEED = 20;
+        const TASK6_REACH = 16;
+        const TASK6_HOLD_TIME = 2.5;
+        const TASK6_UUVS = 6;
+        const TASK6_FORMATION_OFFSETS = [
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(-16, 0, 14),
+            new THREE.Vector3(16, 0, 14),
+            new THREE.Vector3(-32, 0, 28),
+            new THREE.Vector3(32, 0, 28),
+            new THREE.Vector3(0, 0, 30)
+        ];
+        const TASK6_PATH_POINTS = [
+            new THREE.Vector3(-620, 108, 560),
+            new THREE.Vector3(-380, 122, 260),
+            new THREE.Vector3(-60, 116, 40),
+            new THREE.Vector3(260, 110, -180),
+            new THREE.Vector3(560, 106, -420)
+        ];
+        const task6Vehicles = [];
+        const task6WaypointMarkers = [];
+        const task6GateGroups = [];
+        let task6PathLine = null;
+        const task6LeaderForward = new THREE.Vector3();
+        const task6Right = new THREE.Vector3();
+        const task6Desired = new THREE.Vector3();
+
+        function buildTask6Decor() {
+            if (task6PathLine && task6PathLine.parent) task6PathLine.parent.remove(task6PathLine);
+            const pathPts = TASK6_PATH_POINTS.map(function (p) {
+                return new THREE.Vector3(p.x, getTerrainHeight(p.x, p.z) + 18, p.z);
+            });
+            const pathGeo = new THREE.BufferGeometry().setFromPoints(pathPts);
+            task6PathLine = new THREE.Line(
+                pathGeo,
+                new THREE.LineBasicMaterial({ color: 0x7fd8ff, transparent: true, opacity: 0.55 })
+            );
+            task6Group.add(task6PathLine);
+
+            for (let i = 0; i < TASK6_PATH_POINTS.length; i++) {
+                const p = TASK6_PATH_POINTS[i];
+                const y = getTerrainHeight(p.x, p.z) + 18;
+                const marker = new THREE.Mesh(
+                    new THREE.SphereGeometry(4.8, 20, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: i === TASK6_PATH_POINTS.length - 1 ? 0x58f2a7 : 0x5bc2ff,
+                        transparent: true,
+                        opacity: 0.45,
+                        depthWrite: false,
+                        blending: THREE.AdditiveBlending
+                    })
+                );
+                marker.position.set(p.x, y, p.z);
+                task6Group.add(marker);
+                task6WaypointMarkers.push(marker);
+
+                const gate = new THREE.Group();
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: i === TASK6_PATH_POINTS.length - 1 ? 0x7dffcf : 0x8ad7ff,
+                    transparent: true,
+                    opacity: 0.42,
+                    side: THREE.DoubleSide,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending
+                });
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(24, 0.9, 10, 36), ringMat);
+                ring.rotation.x = Math.PI / 2;
+                gate.add(ring);
+                const labelText = i === 0 ? 'Start' : (i === TASK6_PATH_POINTS.length - 1 ? 'Goal' : ('W' + (i + 1)));
+                const label = makeTextSprite(labelText, 42);
+                label.position.set(0, 14, 0);
+                label.scale.set(14, 4.3, 1);
+                gate.add(label);
+                gate.position.set(p.x, y, p.z);
+                task6Group.add(gate);
+                task6GateGroups.push(gate);
+            }
+        }
+        buildTask6Decor();
+
+        for (let i = 0; i < TASK6_UUVS; i++) {
+            const u = createIndexUUV();
+            u.scale.set(0.38 * TASK6_SCALE, 0.38 * TASK6_SCALE, 0.38 * TASK6_SCALE);
+            u.userData.motion = { vel: new THREE.Vector3(), idx: i };
+            u.userData.formationOffset = TASK6_FORMATION_OFFSETS[i].clone();
+            const lbl = makeTextSprite('U' + (i + 1), 48);
+            u.userData.label = lbl;
+            task6Group.add(u);
+            task6Group.add(lbl);
+            task6Vehicles.push(u);
+        }
+
+        const task6State = {
+            pathIndex: 1,
+            holdT: 0,
+            done: false,
+            avgError: 0
+        };
+
+        function resetTask6() {
+            task6State.pathIndex = 1;
+            task6State.holdT = 0;
+            task6State.done = false;
+            task6State.avgError = 0;
+
+            const start = TASK6_PATH_POINTS[0];
+            const next = TASK6_PATH_POINTS[1];
+            const heading = Math.atan2(next.x - start.x, next.z - start.z) + Math.PI;
+            task6LeaderForward.set(next.x - start.x, 0, next.z - start.z).normalize();
+            task6Right.set(task6LeaderForward.z, 0, -task6LeaderForward.x);
+
+            for (let i = 0; i < task6Vehicles.length; i++) {
+                const u = task6Vehicles[i];
+                const off = TASK6_FORMATION_OFFSETS[i];
+                const desiredX = start.x + task6Right.x * off.x - task6LeaderForward.x * off.z;
+                const desiredZ = start.z + task6Right.z * off.x - task6LeaderForward.z * off.z;
+                const desiredY = Math.max(getTerrainHeight(desiredX, desiredZ) + 14, start.y + off.y);
+                u.position.set(desiredX, desiredY, desiredZ);
+                u.rotation.set(0, heading, 0);
+                u.userData.motion.vel.set(0, 0, 0);
+                if (u.userData.label) {
+                    u.userData.label.position.copy(u.position);
+                    u.userData.label.position.y += 3.6;
+                }
+            }
+        }
+
+        function updateTask6(dt, time) {
+            const leader = task6Vehicles[0];
+            const target = TASK6_PATH_POINTS[Math.min(task6State.pathIndex, TASK6_PATH_POINTS.length - 1)];
+            const leadGoalY = Math.max(getTerrainHeight(target.x, target.z) + 14, target.y);
+            const leadTarget = new THREE.Vector3(target.x, leadGoalY, target.z);
+
+            if (!task6State.done) {
+                const leadRes = steerToYawOnly(leader, leadTarget, dt, TASK6_SPEED, 2.6);
+                if (leadRes.dist < TASK6_REACH && task6State.pathIndex < TASK6_PATH_POINTS.length - 1) {
+                    task6State.pathIndex++;
+                } else if (leadRes.dist < TASK6_REACH && task6State.pathIndex === TASK6_PATH_POINTS.length - 1) {
+                    task6State.holdT += dt;
+                    if (task6State.holdT >= TASK6_HOLD_TIME) task6State.done = true;
+                } else {
+                    task6State.holdT = 0;
+                }
+            }
+
+            const nextIdx = Math.min(task6State.pathIndex + 1, TASK6_PATH_POINTS.length - 1);
+            const refNext = TASK6_PATH_POINTS[nextIdx];
+            task6LeaderForward.set(refNext.x - leader.position.x, 0, refNext.z - leader.position.z);
+            if (task6LeaderForward.lengthSq() < 1e-6) {
+                task6LeaderForward.set(Math.sin(leader.rotation.y), 0, Math.cos(leader.rotation.y));
+            } else {
+                task6LeaderForward.normalize();
+            }
+            task6Right.set(task6LeaderForward.z, 0, -task6LeaderForward.x).normalize();
+
+            let errSum = 0;
+            for (let i = 1; i < task6Vehicles.length; i++) {
+                const u = task6Vehicles[i];
+                const off = u.userData.formationOffset;
+                const dx = task6Right.x * off.x - task6LeaderForward.x * off.z;
+                const dz = task6Right.z * off.x - task6LeaderForward.z * off.z;
+                const desiredX = leader.position.x + dx;
+                const desiredZ = leader.position.z + dz;
+                const desiredY = Math.max(getTerrainHeight(desiredX, desiredZ) + 14, leader.position.y + off.y);
+                task6Desired.set(desiredX, desiredY, desiredZ);
+                const res = steerToYawOnly(u, task6Desired, dt, TASK6_SPEED * 0.98, 3.0);
+                errSum += res.dist;
+            }
+            task6State.avgError = errSum / Math.max(1, task6Vehicles.length - 1);
+
+            for (let i = 0; i < task6Vehicles.length; i++) {
+                const u = task6Vehicles[i];
+                updateUUVProps(u, dt, time);
+                if (u.userData.label) {
+                    u.userData.label.position.copy(u.position);
+                    u.userData.label.position.y += 3.6;
+                }
+            }
+
+            for (let i = 0; i < task6WaypointMarkers.length; i++) {
+                task6WaypointMarkers[i].material.opacity = i < task6State.pathIndex ? 0.18 : (i === task6State.pathIndex ? 0.62 : 0.36);
+                task6WaypointMarkers[i].scale.setScalar(i === task6State.pathIndex ? 1.18 : 1.0);
+                const gateRing = task6GateGroups[i].children[0];
+                if (gateRing && gateRing.material) {
+                    gateRing.material.opacity = i < task6State.pathIndex ? 0.16 : (i === task6State.pathIndex ? 0.56 : 0.30);
+                }
+            }
+
+            const completedLegs = Math.max(0, task6State.pathIndex - 1);
+            const totalLegs = TASK6_PATH_POINTS.length - 1;
+            const pct = task6State.done ? 100 : Math.round((completedLegs / totalLegs) * 100);
+            hud.progress.textContent = task6State.done ? '100%' : (pct + '%');
+            hud.note.textContent = task6State.done
+                ? 'Formation reached final gate and held shape.'
+                : '6 UUVs maintain formation while crossing waypoint gates under current disturbance.';
+            hud.sources.innerHTML =
+                '<div>Target waypoint: ' + Math.min(task6State.pathIndex + 1, TASK6_PATH_POINTS.length) + '/' + TASK6_PATH_POINTS.length + '</div>' +
+                '<div>Leader: (' + Math.round(leader.position.x) + ', ' + Math.round(leader.position.y) + ', ' + Math.round(leader.position.z) + ')</div>' +
+                '<div>Avg formation error: ' + task6State.avgError.toFixed(1) + ' m</div>' +
+                '<div class="' + (task6State.done ? 'done' : 'cleaning') + '">' + (task6State.done ? 'Transit complete' : 'Maintaining formation') + '</div>';
+        }
+
+        // =========================
         // HUD + task switching
         // =========================
         const hud = {
@@ -2666,6 +2874,7 @@
             if (activeTask === 'TASK3' && task3Vehicles && task3Vehicles.length) return task3Vehicles[0];
             if (activeTask === 'TASK4' && task4Vehicles && task4Vehicles.length) return task4Vehicles[0];
             if (activeTask === 'TASK5' && task5Vehicles && task5Vehicles.length) return task5Vehicles[0];
+            if (activeTask === 'TASK6' && task6Vehicles && task6Vehicles.length) return task6Vehicles[0];
             return null;
         }
 
@@ -2723,6 +2932,7 @@
         const btnTask3 = document.getElementById('btn-task3');
         const btnTask4 = document.getElementById('btn-task4');
         const btnTask5 = document.getElementById('btn-task5');
+        const btnTask6 = document.getElementById('btn-task6');
         const btnUIToggle = document.getElementById('btn-ui-toggle');
         const btnBack = document.getElementById('btn-back');
         const scanPanelEl = document.getElementById('scan-panel');
@@ -2761,6 +2971,7 @@
             else if (activeTask === 'TASK2') group = task2Vehicles;
             else if (activeTask === 'TASK4') group = task4Vehicles;
             else if (activeTask === 'TASK5') group = task5Vehicles;
+            else if (activeTask === 'TASK6') group = task6Vehicles;
             else group = task3Vehicles;
             if (!group || group.length === 0) return followCenter.clone();
             const c = new THREE.Vector3();
@@ -2788,11 +2999,13 @@
             task3Group.visible = (taskId === 'TASK3');
             task4Group.visible = (taskId === 'TASK4');
             task5Group.visible = (taskId === 'TASK5');
+            task6Group.visible = (taskId === 'TASK6');
             setActiveButton(btnTask1, taskId === 'TASK1');
             setActiveButton(btnTask2, taskId === 'TASK2');
             setActiveButton(btnTask3, taskId === 'TASK3');
             setActiveButton(btnTask4, taskId === 'TASK4');
             setActiveButton(btnTask5, taskId === 'TASK5');
+            setActiveButton(btnTask6, taskId === 'TASK6');
 
             if (scanPanelEl) scanPanelEl.classList.toggle('visible', taskId === 'TASK4');
             const deviceViewEl = document.getElementById('device-view-panel');
@@ -2849,7 +3062,7 @@
                 hud.uuvs.textContent = '1';
                 hud.desc.textContent = `1 UUV. Area scan: the UUV performs a lawn-mower scan over a bounded rectangle. Nearby cells are marked as scanned, and the panel renders a live 3D terrain grid reconstructed from the scanned cells.`;
                 resetTask4();
-            } else {
+            } else if (taskId === 'TASK5') {
                 hud.sourcesTitle.textContent = ' (Task 5)';
                 hud.sources.innerHTML = '—';
                 hud.active.textContent = 'Task 5';
@@ -2857,8 +3070,15 @@
                 hud.desc.textContent = `1 UUV. Pipeline inspection: the UUV follows the pipe path and detects 3 leak points. When the device gets within range, it marks the leak with a red marker and label; the first-person panel shows the inspection view along the pipeline.`;
                 resetTask5();
                 if (hud.leaksMarked) hud.leaksMarked.textContent = '0/3';
+            } else {
+                hud.sourcesTitle.textContent = ' (Task 6)';
+                hud.sources.innerHTML = '—';
+                hud.active.textContent = 'Task 6';
+                hud.uuvs.textContent = String(TASK6_UUVS);
+                hud.desc.textContent = `${TASK6_UUVS} UUVs. Formation transit: the team moves as a coordinated formation through a sequence of gates while holding relative offsets under current disturbance. Completion is reached when the formation crosses the final gate and keeps its shape briefly near the goal.`;
+                resetTask6();
             }
-            // Camera: follow new group from its center + offset (Task 3 closer)
+            // Camera: follow new group from its center + offset.
             followCenter = computeSwarmCenter();
             lastFollowCenter = null;
             controls.target.copy(followCenter);
@@ -2866,6 +3086,7 @@
                 : taskId === 'TASK2' ? new THREE.Vector3(26, 14, 32)
                 : taskId === 'TASK4' ? new THREE.Vector3(8, 4, 10)
                 : taskId === 'TASK5' ? new THREE.Vector3(8, 4, 10)
+                : taskId === 'TASK6' ? new THREE.Vector3(42, 18, 48)
                 : new THREE.Vector3(48, 25, 58);
             camera.position.copy(followCenter).add(camOffset);
             controls.update();
@@ -2876,6 +3097,7 @@
         btnTask3.addEventListener('click', () => setTask('TASK3'));
         btnTask4.addEventListener('click', () => setTask('TASK4'));
         btnTask5.addEventListener('click', () => setTask('TASK5'));
+        btnTask6.addEventListener('click', () => setTask('TASK6'));
 
         // =========================
         // Animate
@@ -2934,6 +3156,7 @@
             else if (activeTask === 'TASK2') updateTask2(dt, time);
             else if (activeTask === 'TASK4') updateTask4(dt, time);
             else if (activeTask === 'TASK5') updateTask5(dt, time);
+            else if (activeTask === 'TASK6') updateTask6(dt, time);
             else updateTask3(dt, time);
 
             // follow camera translation
@@ -2948,6 +3171,7 @@
             else if (activeTask === 'TASK2') taskDone = task2State.phase === 'DONE';
             else if (activeTask === 'TASK4') taskDone = task4State.done;
             else if (activeTask === 'TASK5') taskDone = task5State.done;
+            else if (activeTask === 'TASK6') taskDone = task6State.done;
             else taskDone = task3State.done;
             hud.status.textContent = taskDone ? 'Done' : 'In Progress';
             hud.status.className = 'ui-value ' + (taskDone ? 'status-done' : 'status-running');
@@ -2998,6 +3222,7 @@
         task3Group.visible = false;
         task4Group.visible = false;
         task5Group.visible = false;
+        task6Group.visible = false;
         setTask('TASK1');
         animate();
     </script>
