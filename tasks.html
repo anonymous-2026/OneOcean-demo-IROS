@@ -630,6 +630,9 @@
         // =========================
         function createIndexUUV() {
             const droneGroup = new THREE.Group();
+            const visualGroup = new THREE.Group();
+            visualGroup.rotation.y = Math.PI;
+            droneGroup.add(visualGroup);
             const props = [];
             const CUBE = 2.9;
             const frameSilverMat = new THREE.MeshStandardMaterial({ color: 0xb8b8c0, roughness: 0.35, metalness: 0.7 });
@@ -644,7 +647,7 @@
                 );
                 const bar = new THREE.Mesh(geo, frameSilverMat);
                 bar.position.set(x, y, z);
-                droneGroup.add(bar);
+                visualGroup.add(bar);
             }
             const s = CUBE / 2;
             addEdgeBar(-s, -s, 0, 'z', CUBE); addEdgeBar(-s, s, 0, 'z', CUBE);
@@ -657,7 +660,7 @@
             [[-s,-s,-s],[-s,-s,s],[-s,s,-s],[-s,s,s],[s,-s,-s],[s,-s,s],[s,s,-s],[s,s,s]].forEach(([x,y,z]) => {
                 const joint = new THREE.Mesh(new THREE.BoxGeometry(jointSize, jointSize, jointSize), jointMat);
                 joint.position.set(x, y, z);
-                droneGroup.add(joint);
+                visualGroup.add(joint);
             });
             const rivetMat = new THREE.MeshStandardMaterial({ color: 0x707078, roughness: 0.4, metalness: 0.8 });
             const rivetR = 0.058;
@@ -669,7 +672,7 @@
                 const r = new THREE.Mesh(new THREE.CylinderGeometry(rivetR, rivetR, edgeThick * 1.5, 14), rivetMat.clone());
                 r.position.set(cx + ox, cy + oy, cz + oz);
                 r.rotation.x = Math.PI / 2;
-                droneGroup.add(r);
+                visualGroup.add(r);
             });
 
             const statusLedMat = new THREE.MeshStandardMaterial({
@@ -681,7 +684,7 @@
             });
             const statusLed = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 14), statusLedMat);
             statusLed.position.set(s - 0.04, s - 0.04, -s - 0.04);
-            droneGroup.add(statusLed);
+            visualGroup.add(statusLed);
 
             const braceMat = new THREE.MeshStandardMaterial({ color: 0xa8a8b0, roughness: 0.4, metalness: 0.65 });
             const braceThick = 0.04;
@@ -691,7 +694,7 @@
                 const b = new THREE.Mesh(new THREE.BoxGeometry(braceThick, braceThick, len), braceMat);
                 b.position.set(cx, cy, cz);
                 b.lookAt(x1, y1, z1);
-                droneGroup.add(b);
+                visualGroup.add(b);
             });
 
             const hullR = 0.42, hullLen = CUBE * 0.88;
@@ -704,19 +707,19 @@
             });
             const pressureHull = new THREE.Mesh(new THREE.CylinderGeometry(hullR, hullR, hullLen, 32), hullBlueMat);
             pressureHull.rotation.x = Math.PI / 2;
-            droneGroup.add(pressureHull);
+            visualGroup.add(pressureHull);
             const hullSilverMat = new THREE.MeshStandardMaterial({ color: 0xd0d0d8, roughness: 0.28, metalness: 0.78 });
             for (let i = -1; i <= 1; i++) {
                 const ring = new THREE.Mesh(new THREE.TorusGeometry(hullR + 0.058, 0.042, 12, 32), hullSilverMat);
                 ring.rotation.x = Math.PI / 2;
                 ring.position.z = i * hullLen * 0.36;
-                droneGroup.add(ring);
+                visualGroup.add(ring);
             }
             for (let i = 0; i < 2; i++) {
                 const thin = new THREE.Mesh(new THREE.TorusGeometry(hullR + 0.048, 0.032, 10, 28), hullSilverMat);
                 thin.rotation.x = Math.PI / 2;
                 thin.position.z = (i - 0.5) * hullLen * 0.72;
-                droneGroup.add(thin);
+                visualGroup.add(thin);
             }
 
             const nameplateCanvas = document.createElement('canvas');
@@ -742,18 +745,18 @@
             });
             const nameplate = new THREE.Mesh(new THREE.PlaneGeometry(1.95, 0.65), nameplateMat);
             nameplate.position.set(0, 0, s + 0.38);
-            droneGroup.add(nameplate);
+            visualGroup.add(nameplate);
 
             const panelWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf0f0f5, roughness: 0.6 });
             const panelR = 0.58;
             const frontPanel = new THREE.Mesh(new THREE.CylinderGeometry(panelR, panelR, 0.03, 32), panelWhiteMat);
             frontPanel.rotation.x = Math.PI / 2;
             frontPanel.position.z = -s - 0.02;
-            droneGroup.add(frontPanel);
+            visualGroup.add(frontPanel);
             const panelRim = new THREE.Mesh(new THREE.TorusGeometry(panelR + 0.03, 0.025, 8, 32), frameSilverMat);
             panelRim.rotation.x = Math.PI / 2;
             panelRim.position.z = -s - 0.01;
-            droneGroup.add(panelRim);
+            visualGroup.add(panelRim);
             const holeMat = new THREE.MeshBasicMaterial({ color: 0x1a1a22 });
             const holeRadius = 0.038;
             for (let row = 0; row < 6; row++) {
@@ -764,7 +767,7 @@
                     const hole = new THREE.Mesh(new THREE.CylinderGeometry(holeRadius, holeRadius, 0.04, 12), holeMat);
                     hole.rotation.x = Math.PI / 2;
                     hole.position.set(startX + i * 0.14, y, -s - 0.015);
-                    droneGroup.add(hole);
+                    visualGroup.add(hole);
                 }
             }
 
@@ -781,19 +784,19 @@
                 const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.12, 0.25), bracketMat);
                 bracket.position.set(pos.x, pos.y, pos.z - 0.12);
                 bracket.rotation.x = 0.1;
-                droneGroup.add(bracket);
+                visualGroup.add(bracket);
                 const housing = new THREE.Mesh(new THREE.CylinderGeometry(thrusterRadius, thrusterRadius * 0.95, thrusterLen, 16), thrusterBlackMat);
                 housing.position.set(pos.x, pos.y, pos.z);
                 housing.rotation.x = Math.PI / 2;
-                droneGroup.add(housing);
+                visualGroup.add(housing);
                 const guard = new THREE.Mesh(new THREE.TorusGeometry(thrusterRadius + 0.04, 0.02, 6, 16), thrusterBlackMat);
                 guard.rotation.x = Math.PI / 2;
                 guard.position.set(pos.x + (pos.x > 0 ? 0.22 : -0.22), pos.y, pos.z);
-                droneGroup.add(guard);
+                visualGroup.add(guard);
                 const p = new THREE.Mesh(propGeo, propMat);
                 p.position.set(pos.x + (pos.x > 0 ? 0.2 : -0.2), pos.y, pos.z);
                 p.rotation.x = Math.PI / 2;
-                droneGroup.add(p);
+                visualGroup.add(p);
                 props.push(p);
             });
             const verticalThrusterPositions = [
@@ -802,16 +805,16 @@
             verticalThrusterPositions.forEach(pos => {
                 const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.1), bracketMat);
                 bracket.position.set(pos.x, pos.y - 0.15, pos.z);
-                droneGroup.add(bracket);
+                visualGroup.add(bracket);
                 const housing = new THREE.Mesh(new THREE.CylinderGeometry(thrusterRadius * 0.85, thrusterRadius * 0.8, thrusterLen, 16), thrusterBlackMat);
                 housing.position.set(pos.x, pos.y, pos.z);
-                droneGroup.add(housing);
+                visualGroup.add(housing);
                 const guard = new THREE.Mesh(new THREE.TorusGeometry(thrusterRadius * 0.85 + 0.03, 0.018, 6, 16), thrusterBlackMat);
                 guard.position.set(pos.x, pos.y - 0.2, pos.z);
-                droneGroup.add(guard);
+                visualGroup.add(guard);
                 const p = new THREE.Mesh(propGeo, propMat);
                 p.position.set(pos.x, pos.y - 0.2, pos.z);
-                droneGroup.add(p);
+                visualGroup.add(p);
                 props.push(p);
             });
 
@@ -825,11 +828,11 @@
             const sensorMat = new THREE.MeshStandardMaterial({ color: 0x1c1c20, roughness: 0.6, metalness: 0.2 });
             const sensor = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.1, 12), sensorMat);
             sensor.position.set(0, s + 0.08, 0);
-            droneGroup.add(sensor);
+            visualGroup.add(sensor);
             const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.25, 8), jointMat);
             antenna.position.set(s * 0.5, s + 0.2, -s * 0.5);
             antenna.rotation.z = -0.15;
-            droneGroup.add(antenna);
+            visualGroup.add(antenna);
 
             const trailFrontMat = new THREE.MeshBasicMaterial({ color: 0x7ddaff, transparent: true, opacity: 0.0, depthWrite: false });
             const trailTailMat = new THREE.MeshBasicMaterial({ color: 0x8ee7ff, transparent: true, opacity: 0.0, depthWrite: false });
@@ -843,33 +846,33 @@
             const noseTrail = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.2, 24), trailFrontMat);
             noseTrail.position.set(0, 0, -s - 0.5);
             noseTrail.rotation.x = Math.PI / 2;
-            droneGroup.add(noseTrail);
+            visualGroup.add(noseTrail);
             const noseTrailGlow = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.6, 24), trailGlowMat(0x5dc8ff));
             noseTrailGlow.position.set(0, 0, -s - 0.6);
             noseTrailGlow.rotation.x = Math.PI / 2;
-            droneGroup.add(noseTrailGlow);
+            visualGroup.add(noseTrailGlow);
             const tailTrail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.4, 24), trailTailMat);
             tailTrail.position.set(0, 0, s + 0.5);
             tailTrail.rotation.x = -Math.PI / 2;
-            droneGroup.add(tailTrail);
+            visualGroup.add(tailTrail);
             const tailTrailGlow = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.9, 24), trailGlowMat(0x6ed5ff));
             tailTrailGlow.position.set(0, 0, s + 0.65);
             tailTrailGlow.rotation.x = -Math.PI / 2;
-            droneGroup.add(tailTrailGlow);
+            visualGroup.add(tailTrailGlow);
 
             const frontLight = new THREE.SpotLight(0xb9f0ff, 1.45, 220, Math.PI / 7, 0.55, 1.6);
             frontLight.position.set(0, 0.2, -s - 0.15);
             frontLight.target.position.set(0, 0.2, -34);
             frontLight.castShadow = false;
-            droneGroup.add(frontLight);
-            droneGroup.add(frontLight.target);
+            visualGroup.add(frontLight);
+            visualGroup.add(frontLight.target);
 
             const downLight = new THREE.SpotLight(0x8dd9ff, 1.1, 150, Math.PI / 5, 0.65, 1.5);
             downLight.position.set(0, -s - 0.15, 0);
             downLight.target.position.set(0, -24, 0);
             downLight.castShadow = false;
-            droneGroup.add(downLight);
-            droneGroup.add(downLight.target);
+            visualGroup.add(downLight);
+            visualGroup.add(downLight.target);
 
             // Neutralizer spray (tasks only)
             const spray = new THREE.Mesh(
@@ -885,7 +888,7 @@
             );
             spray.rotation.x = Math.PI / 2;
             spray.position.set(0, 0, -s - 1.1);
-            droneGroup.add(spray);
+            visualGroup.add(spray);
 
             droneGroup.userData = {
                 props,
