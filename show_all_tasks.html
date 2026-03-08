@@ -26,33 +26,24 @@
             color: var(--text);
             font-family: 'Courier New', Courier, monospace;
         }
-        .top-right-controls {
+        .top-brand {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 18px;
+            right: 18px;
             z-index: 220;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 10px;
+            width: 78px;
+            height: 78px;
         }
-        .brand-badge {
-            width: 76px;
-            height: 76px;
-            padding: 8px;
-            border-radius: 18px;
-            background: rgba(6, 26, 39, 0.76);
-            border: 1px solid rgba(128, 241, 255, 0.24);
-            box-shadow: 0 12px 28px rgba(0,0,0,0.28);
-            backdrop-filter: blur(8px);
-        }
-        .brand-badge img {
+        .top-brand img {
             width: 100%;
             height: 100%;
             display: block;
             object-fit: contain;
         }
         .top-btn {
+            position: fixed;
+            right: 20px;
+            z-index: 210;
             min-width: 172px;
             padding: 10px 16px;
             background: #6f5cff;
@@ -65,12 +56,14 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
             text-align: center;
         }
+        #btn-open-tasks { top: 122px; }
+        #btn-open-index { top: 170px; }
         .layout {
             min-height: 100vh;
             display: grid;
             grid-template-rows: 1fr auto;
             gap: 14px;
-            padding: 116px 16px 16px;
+            padding: 16px;
         }
         .task-grid {
             display: grid;
@@ -202,17 +195,17 @@
             .task-grid { grid-template-columns: 1fr; }
             .info-panel { grid-template-columns: 1fr; gap: 10px; }
             .info-desc { padding-top: 0; }
-            .top-right-controls { top: 12px; right: 12px; }
-            .layout { padding-top: 154px; }
+            .top-brand { top: 12px; right: 12px; width: 70px; height: 70px; }
+            .top-btn { right: 12px; min-width: 156px; }
+            #btn-open-tasks { top: 106px; }
+            #btn-open-index { top: 154px; }
         }
     </style>
 </head>
 <body>
-    <div class="top-right-controls">
-        <div class="brand-badge"><img src="example/logo.png" alt="OneOcean logo"></div>
-        <button class="top-btn" id="btn-open-tasks">Open Tasks Page</button>
-        <button class="top-btn" id="btn-open-index">Back to Index</button>
-    </div>
+    <div class="top-brand"><img src="example/logo.png" alt="OneOcean logo"></div>
+    <button class="top-btn" id="btn-open-tasks">Open Tasks Page</button>
+    <button class="top-btn" id="btn-open-index">Back to Index</button>
     <div class="layout">
         <section class="task-grid" id="task-grid">
             <article class="task-card" data-task="TASK1" data-title="Task 1 - Surface Pollution Cleanup" data-uuvs="4 UUVs" data-desc="Multiple UUVs each approach a separate surface pollution source, remain close long enough to neutralize the diffusion plume, then move to the next source until all surface barrels are cleaned.">
