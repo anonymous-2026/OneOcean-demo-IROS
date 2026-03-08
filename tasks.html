@@ -90,6 +90,21 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
+        #btn-show-all {
+            position: absolute;
+            top: 68px;
+            right: 20px;
+            z-index: 200;
+            padding: 10px 20px;
+            background: #6f5cff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
 
         /* UI toggle (bottom-left). Default ON (sidebar + back button visible). */
         #btn-ui-toggle {
@@ -221,6 +236,7 @@
 
     <button id="btn-ui-toggle" title="Toggle UI">UI: ON</button>
     <button id="btn-back">&larr; Back to Index</button>
+    <button id="btn-show-all">Show All Tasks</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -2945,17 +2961,26 @@
         const btnTask6 = document.getElementById('btn-task6');
         const btnUIToggle = document.getElementById('btn-ui-toggle');
         const btnBack = document.getElementById('btn-back');
+        const btnShowAll = document.getElementById('btn-show-all');
         const scanPanelEl = document.getElementById('scan-panel');
+        const deviceViewEl = document.getElementById('device-view-panel');
+        const deviceGridEl = document.getElementById('device-grid-panel');
+        const uiPanelEl = document.getElementById('ui-panel');
+        const query = new URLSearchParams(window.location.search);
+        const EMBED_MODE = query.get('embed') === '1';
+        const REQUESTED_TASK = query.get('task');
+        const VALID_TASKS = new Set(['TASK1', 'TASK2', 'TASK3', 'TASK4', 'TASK5', 'TASK6']);
         btnBack.addEventListener('click', () => location.href = 'index.html');
+        if (btnShowAll) btnShowAll.addEventListener('click', () => location.href = 'show_all_tasks.html');
 
         let activeTask = 'TASK1';
         let uiVisible = true;
 
         function setUIVisible(v) {
             uiVisible = !!v;
-            const uiPanel = document.getElementById('ui-panel');
-            if (uiPanel) uiPanel.style.display = uiVisible ? '' : 'none';
+            if (uiPanelEl) uiPanelEl.style.display = uiVisible ? '' : 'none';
             if (btnBack) btnBack.style.display = uiVisible ? '' : 'none';
+            if (btnShowAll) btnShowAll.style.display = uiVisible ? '' : 'none';
             if (btnUIToggle) {
                 btnUIToggle.textContent = uiVisible ? 'UI: ON' : 'UI: OFF';
                 btnUIToggle.classList.toggle('off', !uiVisible);
@@ -3018,8 +3043,6 @@
             setActiveButton(btnTask6, taskId === 'TASK6');
 
             if (scanPanelEl) scanPanelEl.classList.toggle('visible', taskId === 'TASK4');
-            const deviceViewEl = document.getElementById('device-view-panel');
-            const deviceGridEl = document.getElementById('device-grid-panel');
             if (taskId === 'TASK4') {
                 ensureScanPanel();
                 ensureDeviceViewPanels();
@@ -3101,6 +3124,8 @@
             camera.position.copy(followCenter).add(camOffset);
             controls.update();
         }
+
+        window.setTask = setTask;
 
         btnTask1.addEventListener('click', () => setTask('TASK1'));
         btnTask2.addEventListener('click', () => setTask('TASK2'));
@@ -3233,7 +3258,17 @@
         task4Group.visible = false;
         task5Group.visible = false;
         task6Group.visible = false;
-        setTask('TASK1');
+        const initialTask = VALID_TASKS.has(REQUESTED_TASK) ? REQUESTED_TASK : 'TASK1';
+        setTask(initialTask);
+        if (EMBED_MODE) {
+            setUIVisible(false);
+            if (btnUIToggle) btnUIToggle.style.display = 'none';
+            if (btnBack) btnBack.style.display = 'none';
+            if (btnShowAll) btnShowAll.style.display = 'none';
+            if (scanPanelEl) scanPanelEl.style.display = 'none';
+            if (deviceViewEl) deviceViewEl.style.display = 'none';
+            if (deviceGridEl) deviceGridEl.style.display = 'none';
+        }
         animate();
     </script>
 </body>
