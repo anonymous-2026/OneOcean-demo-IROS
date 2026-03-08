@@ -2745,7 +2745,7 @@
 
             const start = TASK6_PATH_POINTS[0];
             const next = TASK6_PATH_POINTS[1];
-            const heading = Math.atan2(next.x - start.x, next.z - start.z) + Math.PI;
+            const heading = Math.atan2(next.x - start.x, next.z - start.z);
             task6LeaderForward.set(next.x - start.x, 0, next.z - start.z).normalize();
             task6Right.set(task6LeaderForward.z, 0, -task6LeaderForward.x);
 
@@ -2818,11 +2818,16 @@
             }
 
             for (let i = 0; i < task6WaypointMarkers.length; i++) {
-                task6WaypointMarkers[i].material.opacity = i < task6State.pathIndex ? 0.18 : (i === task6State.pathIndex ? 0.62 : 0.36);
-                task6WaypointMarkers[i].scale.setScalar(i === task6State.pathIndex ? 1.18 : 1.0);
+                const marker = task6WaypointMarkers[i];
+                const passed = i < task6State.pathIndex;
+                const current = i === task6State.pathIndex;
+                marker.material.color.setHex(passed ? 0x2cff8a : (current ? 0x9fe4ff : 0x5bc2ff));
+                marker.material.opacity = passed ? 0.26 : (current ? 0.65 : 0.36);
+                marker.scale.setScalar(current ? 1.18 : 1.0);
                 const gateRing = task6GateGroups[i].children[0];
                 if (gateRing && gateRing.material) {
-                    gateRing.material.opacity = i < task6State.pathIndex ? 0.16 : (i === task6State.pathIndex ? 0.56 : 0.30);
+                    gateRing.material.color.setHex(passed ? 0x2cff8a : (current ? 0x9fe4ff : 0x8ad7ff));
+                    gateRing.material.opacity = passed ? 0.22 : (current ? 0.6 : 0.30);
                 }
             }
 
